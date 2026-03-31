@@ -1,0 +1,27 @@
+.grid-board {
+    display: grid;
+    grid-template-columns: repeat(9,1fr);
+    width: 720px;
+    position: absolute;
+    top : 50%;
+    left: 50%;
+    translate: -50% -50%;
+    border: 10px solid rgb(105, 16, 146) ;
+    border-radius: 10px;
+    
+
+    
+}
+
+.square {
+    height: 80px;
+
+}
+
+.light-square {
+    background-color: rgb(245, 212, 174);
+}
+
+.dark-square {
+    background-color: rgb(19, 121, 19);
+}
