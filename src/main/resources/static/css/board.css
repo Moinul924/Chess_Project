@@ -25,3 +25,20 @@
 .dark-square {
     background-color: rgb(19, 121, 19);
 }
+
+.piece {
+    cursor: grab; 
+}
+
+.piece:active {
+    cursor: grabbing; 
+}
+
+.dragging-piece {
+    position: absolute;
+    width: 128px;
+    height: 128px;
+    pointer-events: none; 
+    z-index: 1000;        
+    transform: translate(-50%, -50%); 
+}
