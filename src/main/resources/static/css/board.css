@@ -1,7 +1,7 @@
 .grid-board {
     display: grid;
-    grid-template-columns: repeat(9,1fr);
-    width: 720px;
+    grid-template-columns: repeat(8,1fr);
+    width: 640px;
     position: absolute;
     top : 50%;
     left: 50%;
@@ -14,6 +14,7 @@
 }
 
 .square {
+    position: relative;
     height: 80px;
 
 }
@@ -41,4 +42,36 @@
     pointer-events: none; 
     z-index: 1000;        
     transform: translate(-50%, -50%); 
+}
+
+.legal-move-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    pointer-events: none; 
+    width: 25px; 
+    height: 25px;
+    border-radius: 50%; 
+   
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.legal-capture-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    pointer-events: none;
+
+    /* Make the circle bigger, but hollow! */
+    width: 65px; 
+    height: 65px;
+    border-radius: 50%;
+    background-color: transparent; /* Empty middle */
+    
+    /* A thick transparent border to create the 'target ring' look */
+    border: 7px solid rgba(0, 0, 0, 0.2); 
 }
