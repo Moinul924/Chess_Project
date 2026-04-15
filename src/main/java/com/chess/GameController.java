@@ -44,40 +44,21 @@ public class GameController {
         toSquare.addPiece(movingPiece);
         resetPinPieceList();
         Piece piece = toSquare.getPiece();
-        if(piece.getName().equals("King")){
-            ((King)piece).PieceMoved = true;
-            if(piece.getColour() == PieceColour.WHITE){
-                gameBoard.WhiteKingSquareLocation[0] = toSquare.getRow();
-                gameBoard.WhiteKingSquareLocation[1] = toSquare.getCol();
-            } else {
-                gameBoard.BlackKingSquareLocation[0] = toSquare.getRow();
-                gameBoard.BlackKingSquareLocation[1] = toSquare.getCol();
-            }
-            if(Math.abs(toSquare.getCol() - fromSquare.getCol()) == 2){
-                CastlingMove = true;
-                if(toSquare.getCol() > fromSquare.getCol()){
-                    BoardSquare RookFromSquare = gameBoard.getSquare(fromSquare.getRow(), 7);
-                    BoardSquare RookToSquare = gameBoard.getSquare(fromSquare.getRow(), toSquare.getCol()-1);
-                    Piece RookPiece = RookFromSquare.getPiece();
-                    RookFromSquare.removePiece();
-                    RookToSquare.addPiece(RookPiece);
-                    ((Rook)RookPiece).PieceMoved = true;
-                } else {
-                    BoardSquare RookFromSquare = gameBoard.getSquare(fromSquare.getRow(), 0);
-                    BoardSquare RookToSquare = gameBoard.getSquare(fromSquare.getRow(), toSquare.getCol()+1);
-                    Piece RookPiece = RookFromSquare.getPiece();
-                    RookFromSquare.removePiece();
-                    RookToSquare.addPiece(RookPiece);
-                    ((Rook)RookPiece).PieceMoved = true;
-                }
-            }
-        }
+        CheckKingAction(piece, fromSquare, toSquare);
+
+        
 
         if(piece.getName().equals("Rook")){
             ((Rook)piece).PieceMoved = true;
         }
 
         gameBoard.currentWhiteTurn = !gameBoard.currentWhiteTurn;
+        CheckIsKingInCheck();
+
+    }
+
+
+    public void CheckIsKingInCheck(){
         if(gameBoard.currentWhiteTurn){
             BoardSquare whiteKingSquare = gameBoard.getSquare(gameBoard.WhiteKingSquareLocation[0], gameBoard.WhiteKingSquareLocation[1]);
             ((King)whiteKingSquare.getPiece()).checkKingInCheck(whiteKingSquare, gameBoard);
@@ -86,11 +67,53 @@ public class GameController {
             BoardSquare blackKingSquare = gameBoard.getSquare(gameBoard.BlackKingSquareLocation[0], gameBoard.BlackKingSquareLocation[1]);
             ((King)blackKingSquare.getPiece()).checkKingInCheck(blackKingSquare, gameBoard);
         }
-
-    }
+    }   
 
     public void resetPinPieceList() {
         gameBoard.currentlyPinnedPieces.clear();
+    }
+
+    public void CheckPawnPromotionAction(Piece piece,BoardSquare fromSquare, BoardSquare toSquare){
+        if(!piece.getName().equals("Pawn")){  return;}
+
+        if(toSquare.getRow() == 0  || toSquare.getRow() == 7){  return;}
+
+
+    }
+
+
+    public void CheckKingAction(Piece piece,BoardSquare fromSquare, BoardSquare toSquare){
+        if(!piece.getName().equals("King")){
+           return;
+        }
+
+        ((King)piece).PieceMoved = true;
+        if(piece.getColour() == PieceColour.WHITE){
+            gameBoard.WhiteKingSquareLocation[0] = toSquare.getRow();
+            gameBoard.WhiteKingSquareLocation[1] = toSquare.getCol();
+        } else {
+            gameBoard.BlackKingSquareLocation[0] = toSquare.getRow();
+            gameBoard.BlackKingSquareLocation[1] = toSquare.getCol();
+        }
+        if(Math.abs(toSquare.getCol() - fromSquare.getCol()) == 2){
+            CastlingMove = true;
+            if(toSquare.getCol() > fromSquare.getCol()){
+                BoardSquare RookFromSquare = gameBoard.getSquare(fromSquare.getRow(), 7);
+                BoardSquare RookToSquare = gameBoard.getSquare(fromSquare.getRow(), toSquare.getCol()-1);
+                Piece RookPiece = RookFromSquare.getPiece();
+                RookFromSquare.removePiece();
+                RookToSquare.addPiece(RookPiece);
+                ((Rook)RookPiece).PieceMoved = true;
+            } else {
+                BoardSquare RookFromSquare = gameBoard.getSquare(fromSquare.getRow(), 0);
+                BoardSquare RookToSquare = gameBoard.getSquare(fromSquare.getRow(), toSquare.getCol()+1);
+                Piece RookPiece = RookFromSquare.getPiece();
+                RookFromSquare.removePiece();
+                RookToSquare.addPiece(RookPiece);
+                ((Rook)RookPiece).PieceMoved = true;
+            }
+        }
+        
     }
 
 
@@ -102,7 +125,7 @@ public class GameController {
         System.out.println("Coordinates: Row " + row + ", Col " + col); 
         BoardSquare clickedSquare = gameBoard.getSquare(row, col);
         selectedSquare = clickedSquare;
-        
+
         currentPieceLegalMoves = clickedSquare.getPiece().getLegalMoves(clickedSquare, gameBoard);
         return currentPieceLegalMoves;
     }
@@ -148,5 +171,24 @@ public class GameController {
         response.second[1][0] = StartRookRow;
         response.second[1][1] = EndRookCol;
         return response;
+    }
+
+    @PostMapping("/promote")
+    public void handlePawnPromotion(@RequestParam int row, @RequestParam int col, @RequestParam String newPiece) {
+        System.out.println("--- PAWN PROMOTED TO " + newPiece + " ---");
+        
+        BoardSquare square = gameBoard.getSquare(row, col);
+        PieceColour color = square.getPiece().getColour();
+        
+        // Remove the pawn
+        square.removePiece();
+        
+        // Add the new piece based on what the user clicked
+        if (newPiece.equals("Queen")) square.addPiece(new Queen(color));
+        else if (newPiece.equals("Rook")) square.addPiece(new Rook(color));
+        else if (newPiece.equals("Bishop")) square.addPiece(new Bishop(color));
+        else if (newPiece.equals("Knight")) square.addPiece(new Knight(color));
+
+        CheckIsKingInCheck();   
     }
 }

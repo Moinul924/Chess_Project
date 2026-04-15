@@ -54,6 +54,10 @@ class ChessUI {
 
     async mouseDownHandler(e) {
 
+        if(pawnPromotionInProgress) {
+            return;
+        }
+
         this.activePiece = e.target;
         
         this.activePiece.style.opacity = '0'; 
@@ -156,6 +160,10 @@ class ChessUI {
                 
                 // Update the ID of our piece
                 this.activePiece.id = pieceName + '-' + targetSquareElement.id;
+
+                if (pieceName.includes('Pawn') && (position.row === 0 || position.row === 7)) {
+                    this.showPromotionMenu(pieceName, targetSquareElement, position.row, position.col);
+                }
             }
 
             const response2 = await fetch('/api/castle');
@@ -173,6 +181,53 @@ class ChessUI {
         this.activePiece = null;
         this.clearLegalMoveIndicators();
         
+    }
+
+    showPromotionMenu(pieceName, targetSquareElement, row, col) {
+        pawnPromotionInProgress = true;
+        const colorLetter = pieceName[0]; 
+        const folderColor = colorLetter === 'W' ? 'White' : 'Black';
+
+        const menu = document.createElement('div');
+        menu.className = 'promotion-menu';
+        
+        if (row === 0) { 
+            menu.style.bottom = '100%';
+        } else if (row === 7) {
+            menu.style.top = '100%';
+        }
+
+        const options = ['Queen', 'Knight', 'Rook', 'Bishop'];
+
+        options.forEach(option => {
+            const img = document.createElement('img');
+            const newPieceName = colorLetter + option; // e.g., 'WQueen'
+            
+            img.src = `./piece_images/Images-80px/${folderColor}/${newPieceName}-80px.png`;
+            img.className = 'promotion-option';
+            
+            // 4. What happens when they click an option!
+            img.addEventListener('click', async () => {
+                pawnPromotionInProgress = false;
+                
+                menu.remove(); 
+
+                // B. Update the piece visually on the board
+                const pawnOnBoard = targetSquareElement.querySelector('.piece');
+                if (pawnOnBoard) {
+                    pawnOnBoard.src = img.src;
+                    pawnOnBoard.id = newPieceName + '-' + targetSquareElement.id;
+                }
+
+                // C. Tell Java to actually change the piece in the backend!
+                await fetch(`/api/promote?row=${row}&col=${col}&newPiece=${option}`, { method: 'POST' });
+            });
+
+            menu.appendChild(img);
+        });
+
+        // Show the menu on the screen!
+        targetSquareElement.appendChild(menu);
     }
 
     async CastlingMoveRook(StartRookRow,StartRookCol,EndRookRow,EndRookCol) {
@@ -244,7 +299,7 @@ class ChessUI {
 
 
 
-
+let pawnPromotionInProgress = false;
 const game = new ChessUI();
 game.createGrid();
 game.fetchBoard();

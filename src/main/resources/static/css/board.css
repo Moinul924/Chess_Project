@@ -75,3 +75,27 @@
     /* A thick transparent border to create the 'target ring' look */
     border: 7px solid rgba(0, 0, 0, 0.2); 
 }
+
+.promotion-menu {
+    position: absolute;
+    left: 0;
+    background-color: white;
+    border: 2px solid #333;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: row; 
+    z-index: 1000; 
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.promotion-option {
+    width: 80px; /* Adjust to match your square size */
+    height: 80px;
+    cursor: pointer;
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.promotion-option:hover {
+    background-color: lightblue; /* Highlights the piece they hover over */
+}
