@@ -8,6 +8,8 @@
     translate: -50% -50%;
     border: 10px solid rgb(105, 16, 146) ;
     border-radius: 10px;
+
+    user-select: none;
     
 
     

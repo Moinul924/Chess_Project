@@ -3,6 +3,9 @@ package com.chess;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.chess.chessMove.Move;
+import com.chess.chessPiece.*;
+
 public class Board {
     private BoardSquare[][] board;
     public boolean currentWhiteTurn = true;
@@ -11,6 +14,8 @@ public class Board {
     public List<BoardSquare> squaresToBlockCheck = new ArrayList<>(); 
     public int[] WhiteKingSquareLocation = new int[2];
     public int[] BlackKingSquareLocation = new int[2];
+    public List<Move> currentPieceLegalMoves = null;
+    public List<Move> moveHistory = new ArrayList<>();
 
     Board(){
         this.board = new BoardSquare[8][8];
@@ -69,6 +74,42 @@ public class Board {
 
     public Boolean isSquareOccupied(int row, int col){
         return board[row][col].isOccupied();
+    }
+
+    public void CheckIsKingInCheck(){
+        if(currentWhiteTurn){
+            BoardSquare whiteKingSquare = getSquare(WhiteKingSquareLocation[0], WhiteKingSquareLocation[1]);
+            ((King)whiteKingSquare.getPiece()).checkKingInCheck(whiteKingSquare, this);
+        }
+        else{
+            BoardSquare blackKingSquare = getSquare(BlackKingSquareLocation[0],BlackKingSquareLocation[1]);
+            ((King)blackKingSquare.getPiece()).checkKingInCheck(blackKingSquare, this);
+        }
+    } 
+
+    public void movePiece(Move PerformMove) {
+        PerformMove.execute(this);
+        resetPinPieceList();
+        currentWhiteTurn = !currentWhiteTurn;
+        CheckIsKingInCheck();
+
+    }
+
+    public void CheckKingAction(Piece piece,BoardSquare fromSquare, BoardSquare toSquare){
+        if(!piece.getName().equals("King")){
+           return;
+        }
+
+        ((King)piece).PieceMoved = true;
+        
+        if(Math.abs(toSquare.getCol() - fromSquare.getCol()) == 2){
+            
+        }
+        
+    }
+
+    public void resetPinPieceList() {
+        currentlyPinnedPieces.clear();
     }
 
 

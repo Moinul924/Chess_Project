@@ -6,6 +6,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.chess.chessMove.CastlingMove;
+import com.chess.chessMove.EnPassantMove;
+import com.chess.chessMove.Move;
+import com.chess.chessMove.PawnPromotionMove;
+import com.chess.chessPiece.*;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -18,8 +24,7 @@ public class GameController {
     private Board gameBoard = new Board(); 
     private BoardSquare selectedSquare = null;
     private BoardSquare targetSquare = null;
-    private List<BoardSquare> currentPieceLegalMoves = null;
-    private boolean CastlingMove = false;
+    
 
 
     public GameController() {
@@ -34,100 +39,17 @@ public class GameController {
         return gameBoard; 
     }
 
-    public void movePiece(BoardSquare fromSquare, BoardSquare toSquare) {
-        CastlingMove = false;
-        if (toSquare.isOccupied()) {
-            toSquare.removePiece();
-        }
-        Piece movingPiece = fromSquare.getPiece();
-        fromSquare.removePiece();
-        toSquare.addPiece(movingPiece);
-        resetPinPieceList();
-        Piece piece = toSquare.getPiece();
-        CheckKingAction(piece, fromSquare, toSquare);
-
-        
-
-        if(piece.getName().equals("Rook")){
-            ((Rook)piece).PieceMoved = true;
-        }
-
-        gameBoard.currentWhiteTurn = !gameBoard.currentWhiteTurn;
-        CheckIsKingInCheck();
-
-    }
-
-
-    public void CheckIsKingInCheck(){
-        if(gameBoard.currentWhiteTurn){
-            BoardSquare whiteKingSquare = gameBoard.getSquare(gameBoard.WhiteKingSquareLocation[0], gameBoard.WhiteKingSquareLocation[1]);
-            ((King)whiteKingSquare.getPiece()).checkKingInCheck(whiteKingSquare, gameBoard);
-        }
-        else{
-            BoardSquare blackKingSquare = gameBoard.getSquare(gameBoard.BlackKingSquareLocation[0], gameBoard.BlackKingSquareLocation[1]);
-            ((King)blackKingSquare.getPiece()).checkKingInCheck(blackKingSquare, gameBoard);
-        }
-    }   
-
-    public void resetPinPieceList() {
-        gameBoard.currentlyPinnedPieces.clear();
-    }
-
-    public void CheckPawnPromotionAction(Piece piece,BoardSquare fromSquare, BoardSquare toSquare){
-        if(!piece.getName().equals("Pawn")){  return;}
-
-        if(toSquare.getRow() == 0  || toSquare.getRow() == 7){  return;}
-
-
-    }
-
-
-    public void CheckKingAction(Piece piece,BoardSquare fromSquare, BoardSquare toSquare){
-        if(!piece.getName().equals("King")){
-           return;
-        }
-
-        ((King)piece).PieceMoved = true;
-        if(piece.getColour() == PieceColour.WHITE){
-            gameBoard.WhiteKingSquareLocation[0] = toSquare.getRow();
-            gameBoard.WhiteKingSquareLocation[1] = toSquare.getCol();
-        } else {
-            gameBoard.BlackKingSquareLocation[0] = toSquare.getRow();
-            gameBoard.BlackKingSquareLocation[1] = toSquare.getCol();
-        }
-        if(Math.abs(toSquare.getCol() - fromSquare.getCol()) == 2){
-            CastlingMove = true;
-            if(toSquare.getCol() > fromSquare.getCol()){
-                BoardSquare RookFromSquare = gameBoard.getSquare(fromSquare.getRow(), 7);
-                BoardSquare RookToSquare = gameBoard.getSquare(fromSquare.getRow(), toSquare.getCol()-1);
-                Piece RookPiece = RookFromSquare.getPiece();
-                RookFromSquare.removePiece();
-                RookToSquare.addPiece(RookPiece);
-                ((Rook)RookPiece).PieceMoved = true;
-            } else {
-                BoardSquare RookFromSquare = gameBoard.getSquare(fromSquare.getRow(), 0);
-                BoardSquare RookToSquare = gameBoard.getSquare(fromSquare.getRow(), toSquare.getCol()+1);
-                Piece RookPiece = RookFromSquare.getPiece();
-                RookFromSquare.removePiece();
-                RookToSquare.addPiece(RookPiece);
-                ((Rook)RookPiece).PieceMoved = true;
-            }
-        }
-        
-    }
-
-
 
     @PostMapping("/click")
-    public List<BoardSquare> handlePieceClick(@RequestParam int row, @RequestParam int col, @RequestParam String name) {
+    public List<Move> handlePieceClick(@RequestParam int row, @RequestParam int col, @RequestParam String name) {
         System.out.println("--- NEW CLICK RECEIVED FROM BROWSER ---");
         System.out.println("Piece: " + name);
         System.out.println("Coordinates: Row " + row + ", Col " + col); 
         BoardSquare clickedSquare = gameBoard.getSquare(row, col);
         selectedSquare = clickedSquare;
 
-        currentPieceLegalMoves = clickedSquare.getPiece().getLegalMoves(clickedSquare, gameBoard);
-        return currentPieceLegalMoves;
+        gameBoard.currentPieceLegalMoves = clickedSquare.getPiece().getLegalMoves(clickedSquare, gameBoard);
+        return gameBoard.currentPieceLegalMoves;
     }
 
     @PostMapping("/moved")
@@ -142,9 +64,10 @@ public class GameController {
             
             return false; 
         }
-        for(BoardSquare LegalSquare : currentPieceLegalMoves){
-            if(LegalSquare.getRow() == row && LegalSquare.getCol() == col){
-                movePiece(selectedSquare, targetSquare); 
+        for(Move LegalSquare : gameBoard.currentPieceLegalMoves){
+            BoardSquare endSquare = LegalSquare.getEndSquare();
+            if(endSquare== targetSquare){
+                gameBoard.movePiece(LegalSquare); 
                 return true;
             }
         }  
@@ -153,42 +76,59 @@ public class GameController {
 
 
     @GetMapping("/castle")
-    public PairOfData<Boolean,int [][]> handleCastlingMove() {
+    public Move IsLastMoveCastlingMove() {
         System.out.println("--- CASTLING MOVE CHECK ---");
-        System.out.println("Castling Move: " + CastlingMove);
-        PairOfData<Boolean, int[][]> response = new PairOfData<>(CastlingMove,new int [][] {new int[2], new int[2]});
 
-        if(!CastlingMove){
-            return response;
+        if (gameBoard.moveHistory.isEmpty()) {
+            return null;
         }
+
+        Move lastMove = gameBoard.moveHistory.getLast();
+        if(lastMove instanceof CastlingMove){
+            return lastMove;
+        }
+
+        return null;
         
-        int StartRookRow = !gameBoard.currentWhiteTurn ? gameBoard.WhiteKingSquareLocation[0] : gameBoard.BlackKingSquareLocation[0];
-        int StartRookCol = targetSquare.getCol() > selectedSquare.getCol() ? 7 : 0;
-        int step = targetSquare.getCol() > selectedSquare.getCol() ? -1 : 1;
-        int EndRookCol = targetSquare.getCol()+step;
-        response.second[0][0] = StartRookRow;
-        response.second[0][1] = StartRookCol;
-        response.second[1][0] = StartRookRow;
-        response.second[1][1] = EndRookCol;
-        return response;
     }
 
     @PostMapping("/promote")
     public void handlePawnPromotion(@RequestParam int row, @RequestParam int col, @RequestParam String newPiece) {
         System.out.println("--- PAWN PROMOTED TO " + newPiece + " ---");
         
-        BoardSquare square = gameBoard.getSquare(row, col);
-        PieceColour color = square.getPiece().getColour();
+        BoardSquare currentPawnSquare = gameBoard.getSquare(row, col);
+        Piece currentPawn = currentPawnSquare.getPiece();
+        PieceColour Pawncolor = currentPawn.getColour();
+        Move LastMove = gameBoard.moveHistory.getLast();
         
-        // Remove the pawn
-        square.removePiece();
+        Piece NewPromotionPiece; 
         
         // Add the new piece based on what the user clicked
-        if (newPiece.equals("Queen")) square.addPiece(new Queen(color));
-        else if (newPiece.equals("Rook")) square.addPiece(new Rook(color));
-        else if (newPiece.equals("Bishop")) square.addPiece(new Bishop(color));
-        else if (newPiece.equals("Knight")) square.addPiece(new Knight(color));
+        if (newPiece.equals("Queen")) NewPromotionPiece = new Queen(Pawncolor);
+        else if (newPiece.equals("Rook")) NewPromotionPiece = new Rook(Pawncolor);
+        else if (newPiece.equals("Bishop")) NewPromotionPiece = new Bishop(Pawncolor);
+        else if (newPiece.equals("Knight")) NewPromotionPiece = new Knight(Pawncolor);
+        else NewPromotionPiece = null;
 
-        CheckIsKingInCheck();   
+        PawnPromotionMove move = new PawnPromotionMove(LastMove.getStartSquare(), currentPawnSquare,currentPawn, NewPromotionPiece);
+        gameBoard.movePiece(move);  
+    }
+
+
+    @GetMapping("/EnPassant")
+    public Move IsLastMoveEnPassant(){
+        System.out.println("--- EnPassant MOVE CHECK ---");
+
+        if (gameBoard.moveHistory.isEmpty()) {
+            return null;
+        }
+        
+        Move lastMove = gameBoard.moveHistory.getLast();
+        if(lastMove instanceof EnPassantMove){
+            return (EnPassantMove)lastMove;
+        }
+
+        return null;
+
     }
 }

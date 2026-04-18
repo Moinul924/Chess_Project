@@ -1,24 +1,18 @@
-class ChessUI {
+let pawnPromotionInProgress = false;
 
+class ChessUI {
     
-    
-    
-    // 1. The constructor runs automatically when you create the class
     constructor() {
         this.boardElement = document.querySelector('.grid-board');
         
-        // Global variables are now class properties!
         this.activePiece = null;
         this.floatingPiece = null;
 
-        // CRITICAL: We have to 'bind' event listeners to the class so that 
-        // the word 'this' always refers to the ChessUI, not the HTML image.
         this.mouseDownHandler = this.mouseDownHandler.bind(this);
         this.mouseMoveHandler = this.mouseMoveHandler.bind(this);
         this.mouseUpHandler = this.mouseUpHandler.bind(this);
     }
 
-    // 2. We moved the grid generation into its own method
     createGrid() {
         for (let i = 0; i < 64; i++) {
             const square = document.createElement('div')
@@ -53,13 +47,12 @@ class ChessUI {
     }
 
     async mouseDownHandler(e) {
+        e.preventDefault();
 
-        if(pawnPromotionInProgress) {
-            return;
-        }
+        if(pawnPromotionInProgress) return;
+        if (this.activePiece !== null || this.floatingPiece !== null) return;
 
         this.activePiece = e.target;
-        
         this.activePiece.style.opacity = '0'; 
 
         this.floatingPiece = document.createElement('img');
@@ -72,20 +65,21 @@ class ChessUI {
         document.addEventListener('mousemove', this.mouseMoveHandler);
         document.addEventListener('mouseup', this.mouseUpHandler);
 
-        // Notify Java!
+        this.clearLegalMoveIndicators();
+
         const pieceId = this.activePiece.id; 
         const [pieceName, position] = pieceId.split('-'); 
         let indices = this.convertPositionToIndices(position);
         
-        
         const url = `/api/click?row=${indices.row}&col=${indices.col}&name=${pieceName}`; 
         const response = await fetch(url, { method: 'POST' });
-        const legalSquares = await response.json(); 
-        console.log("Legal moves received from Java:", legalSquares);
+        const legalMoves = await response.json(); 
+        
+        if (this.activePiece === null) return; 
     
-        for(let square of legalSquares) {
-            let row = String.fromCharCode(97 + square.row);
-            let col = square.col;
+        for(let move of legalMoves) {
+            let row = String.fromCharCode(97 + move.endSquare.row);
+            let col = move.endSquare.col;
             let squareId = row + col;
             let squareElement = document.getElementById(squareId);
             
@@ -99,7 +93,6 @@ class ChessUI {
                 squareElement.appendChild(indicator);
             }
         }
-        
     }
 
     clearLegalMoveIndicators() {
@@ -132,7 +125,6 @@ class ChessUI {
         this.floatingPiece = null;
         this.activePiece.style.opacity = '1';
 
-        // 1. Figure out exactly which square the mouse landed on
         let targetSquareElement = targetElement;
         if (targetElement && targetElement.classList.contains('piece')) {
             targetSquareElement = targetElement.parentElement;
@@ -145,42 +137,48 @@ class ChessUI {
             const url = `/api/moved?row=${position.row}&col=${position.col}&name=${pieceName}`; 
             let response = await fetch(url, { method: 'POST' });
             let isMoveLegal = await response.json(); 
-            console.log("Move result received from Java:", isMoveLegal);
-
 
             if (isMoveLegal) {
-
-                // If there's an enemy piece there, remove it
+                // 1. Visual Move Updates
                 if (targetElement.classList.contains('piece')) {
                     targetSquareElement.removeChild(targetElement);
                 }
-
-                // Move our piece to the new square
                 targetSquareElement.appendChild(this.activePiece);
-                
-                // Update the ID of our piece
                 this.activePiece.id = pieceName + '-' + targetSquareElement.id;
 
+                // 2. Check Promotion
                 if (pieceName.includes('Pawn') && (position.row === 0 || position.row === 7)) {
                     this.showPromotionMenu(pieceName, targetSquareElement, position.row, position.col);
                 }
-            }
 
-            const response2 = await fetch('/api/castle');
-            const result = await response2.json();
+                // 3. Check Castling
+                const response2 = await fetch('/api/castle');
+                const text = await response2.text(); 
+                if (text) {
+                    const result = JSON.parse(text); 
+                    let StartRookRow = result.rookStartSquare.row;
+                    let StartRookCol = result.rookStartSquare.col;
+                    let EndRookRow = result.rookEndSquare.row;
+                    let EndRookCol = result.rookEndSquare.col;
+                    this.CastlingMoveRook(StartRookRow, StartRookCol, EndRookRow, EndRookCol);
+                }
 
-            if (result.first === true) {
-                let StartRookRow = result.second[0][0];
-                let StartRookCol = result.second[0][1];
-                let EndRookRow = result.second[1][0];
-                let EndRookCol = result.second[1][1];
-                this.CastlingMoveRook(StartRookRow,StartRookCol,EndRookRow,EndRookCol);
+                // 4. Check En Passant
+                const response3 = await fetch('/api/EnPassant');
+                console.log("enpassant info:", response3);
+                const text2 = await response3.text();
+                if(text2){
+                    const result = JSON.parse(text2);
+                    console.log("result:", result)
+                    let capturedPawnSquareRow = result.capturedPawnSquare.row;
+                    let capturedPawnSquareCol = result.capturedPawnSquare.col;
+                    this.EnPassantRemoveCapturedPawn(capturedPawnSquareRow, capturedPawnSquareCol);
+                }
             }
         }
 
         this.activePiece = null;
         this.clearLegalMoveIndicators();
-        
     }
 
     showPromotionMenu(pieceName, targetSquareElement, row, col) {
@@ -191,42 +189,32 @@ class ChessUI {
         const menu = document.createElement('div');
         menu.className = 'promotion-menu';
         
-        if (row === 0) { 
-            menu.style.bottom = '100%';
-        } else if (row === 7) {
-            menu.style.top = '100%';
-        }
+        if (row === 0) menu.style.bottom = '100%';
+        else if (row === 7) menu.style.top = '100%';
 
         const options = ['Queen', 'Knight', 'Rook', 'Bishop'];
 
         options.forEach(option => {
             const img = document.createElement('img');
-            const newPieceName = colorLetter + option; // e.g., 'WQueen'
-            
+            const newPieceName = colorLetter + option; 
             img.src = `./piece_images/Images-80px/${folderColor}/${newPieceName}-80px.png`;
             img.className = 'promotion-option';
             
-            // 4. What happens when they click an option!
             img.addEventListener('click', async () => {
                 pawnPromotionInProgress = false;
-                
                 menu.remove(); 
 
-                // B. Update the piece visually on the board
                 const pawnOnBoard = targetSquareElement.querySelector('.piece');
                 if (pawnOnBoard) {
                     pawnOnBoard.src = img.src;
                     pawnOnBoard.id = newPieceName + '-' + targetSquareElement.id;
                 }
-
-                // C. Tell Java to actually change the piece in the backend!
                 await fetch(`/api/promote?row=${row}&col=${col}&newPiece=${option}`, { method: 'POST' });
             });
 
             menu.appendChild(img);
         });
 
-        // Show the menu on the screen!
         targetSquareElement.appendChild(menu);
     }
 
@@ -238,20 +226,24 @@ class ChessUI {
         const endSquare = document.getElementById(endSquareId);
 
         if (startSquare && endSquare) {
-
             const rookPiece = startSquare.querySelector('.piece');
-
             if (rookPiece) {
-                
                 endSquare.appendChild(rookPiece);
-
                 let pieceName = rookPiece.id.split('-')[0];
                 rookPiece.id = pieceName + '-' + endSquareId;
             }
         }
+    }
 
-
-        
+    async EnPassantRemoveCapturedPawn(SquareRow,SquareCol){
+        let captureSquareId = this.convertIndicesToPosition(SquareRow,SquareCol);
+        const captureSquare = document.getElementById(captureSquareId);
+        if(captureSquare){
+            const capturedPiece = captureSquare.querySelector('.piece');
+            if(capturedPiece){
+                capturedPiece.remove();
+            }
+        }
     }
 
     convertIndicesToPosition(row, col) {
@@ -270,8 +262,6 @@ class ChessUI {
         pieces.forEach(piece => piece.remove());
     }
 
-    
-
     async fetchBoard() {
         const response = await fetch('/api/board');
         const boardData = await response.json();
@@ -289,17 +279,8 @@ class ChessUI {
             }
         }
     }
-
-
-   
 }
 
-
-
-
-
-
-let pawnPromotionInProgress = false;
 const game = new ChessUI();
 game.createGrid();
 game.fetchBoard();

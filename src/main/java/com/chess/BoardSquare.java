@@ -1,4 +1,5 @@
 package com.chess;
+import com.chess.chessPiece.Piece;
 
 public class BoardSquare {
 

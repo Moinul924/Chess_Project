@@ -1,6 +1,10 @@
-package com.chess;
+package com.chess.chessPiece;
 
 import java.util.List;
+import com.chess.Board;
+import com.chess.BoardSquare;
+import com.chess.chessMove.Move;
+
 
 public abstract class Piece {
     private PieceColour colour;
@@ -43,6 +47,6 @@ public abstract class Piece {
         return false;
     }
 
-    abstract List<BoardSquare> getLegalMoves(BoardSquare currentSquare, Board board);  
     public abstract int[][] getMoveOffsets(); 
+    public abstract List<Move> getLegalMoves(BoardSquare currentSquare, Board board);  
 }
