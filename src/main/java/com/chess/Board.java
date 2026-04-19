@@ -16,6 +16,8 @@ public class Board {
     public int[] BlackKingSquareLocation = new int[2];
     public List<Move> currentPieceLegalMoves = null;
     public List<Move> moveHistory = new ArrayList<>();
+    public boolean CheckMate = false;
+    public boolean StaleMate = false;
 
     Board(){
         this.board = new BoardSquare[8][8];
@@ -63,6 +65,47 @@ public class Board {
 
     }
 
+    public void IsCheckMate(){
+        if(!KingInCheck){
+            return;
+        }
+        if(CanAnyPieceMove(currentWhiteTurn)){
+            return;
+        }
+        CheckMate = true;
+        
+        
+    }
+
+    public void StaleMate(){
+        if(KingInCheck){
+            return;
+        }
+        if(CanAnyPieceMove(currentWhiteTurn)){
+            return;
+        }
+        StaleMate = true;
+    }
+
+    public boolean CanAnyPieceMove(boolean WhiteTurn){
+        for(int i = 0; i < 8; i++){
+            for(int j = 0; j < 8; j++){
+                BoardSquare square = getSquare(i, j);
+                if(square.isOccupied()){
+                    Piece piece = square.getPiece();
+                    if(piece.getColour() == (WhiteTurn ? PieceColour.WHITE : PieceColour.BLACK)){
+                        if(!piece.getLegalMoves(square, this).isEmpty()){
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    
+
 
     public BoardSquare getSquare(int row, int col){
         return board[row][col];
@@ -92,6 +135,8 @@ public class Board {
         resetPinPieceList();
         currentWhiteTurn = !currentWhiteTurn;
         CheckIsKingInCheck();
+        IsCheckMate();
+        StaleMate();
 
     }
 

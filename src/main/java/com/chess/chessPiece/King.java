@@ -145,7 +145,7 @@ public class King extends Piece {
         
         int currentRow = kingCurrentSquare.getRow();
         int currentCol = kingCurrentSquare.getCol();
-        
+        board.squaresToBlockCheck.clear();
         PairOfData<Boolean, List<int[]>> checkInfo = isTheSquareUnderAttack(currentRow, currentCol, board);
         
         if (checkInfo.firstData) {
@@ -153,7 +153,6 @@ public class King extends Piece {
             GetSquaresToBlockCheck(currentRow, currentCol, board, checkInfo.secondData);    
         }else {
             board.KingInCheck = false;
-            board.squaresToBlockCheck.clear();
         }
     }
     

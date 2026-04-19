@@ -4,6 +4,9 @@ class ChessUI {
     
     constructor() {
         this.boardElement = document.querySelector('.grid-board');
+        this.gameOverOverlay = document.getElementById('game-over-overlay');
+        this.gameOverTitle = document.getElementById('game-over-title');
+        this.gameOverDetail = document.getElementById('game-over-detail');
         
         this.activePiece = null;
         this.floatingPiece = null;
@@ -47,6 +50,7 @@ class ChessUI {
     }
 
     async mouseDownHandler(e) {
+        if(GameOver) return;
         e.preventDefault();
 
         if(pawnPromotionInProgress) return;
@@ -114,6 +118,7 @@ class ChessUI {
     }
 
     async mouseUpHandler(e) {
+        if(GameOver) return;
         document.removeEventListener('mousemove', this.mouseMoveHandler);
         document.removeEventListener('mouseup', this.mouseUpHandler);
 
@@ -139,6 +144,8 @@ class ChessUI {
             let isMoveLegal = await response.json(); 
 
             if (isMoveLegal) {
+                let promotionPending = false;
+
                 // 1. Visual Move Updates
                 if (targetElement.classList.contains('piece')) {
                     targetSquareElement.removeChild(targetElement);
@@ -148,6 +155,7 @@ class ChessUI {
 
                 // 2. Check Promotion
                 if (pieceName.includes('Pawn') && (position.row === 0 || position.row === 7)) {
+                    promotionPending = true;
                     this.showPromotionMenu(pieceName, targetSquareElement, position.row, position.col);
                 }
 
@@ -165,21 +173,45 @@ class ChessUI {
 
                 // 4. Check En Passant
                 const response3 = await fetch('/api/EnPassant');
-                console.log("enpassant info:", response3);
                 const text2 = await response3.text();
                 if(text2){
                     const result = JSON.parse(text2);
-                    console.log("result:", result)
                     let capturedPawnSquareRow = result.capturedPawnSquare.row;
                     let capturedPawnSquareCol = result.capturedPawnSquare.col;
                     this.EnPassantRemoveCapturedPawn(capturedPawnSquareRow, capturedPawnSquareCol);
                 }
+
+                if (!promotionPending) {
+                    await this.updateGameOverState();
+                }
             }
         }
-
+        
+        
         this.activePiece = null;
         this.clearLegalMoveIndicators();
     }
+    
+    async updateGameOverState() {
+        const response = await fetch('/api/board');
+        const boardData = await response.json();
+
+        if (boardData.CheckMate) {
+            GameOver = true;
+            const winner = boardData.currentWhiteTurn ? 'Black' : 'White';
+            this.showGameOverMessage(`${winner} wins by checkmate.`);
+            return true;
+        }
+
+        if (boardData.StaleMate) {
+            GameOver = true;
+            this.showGameOverMessage('The game ends in a stalemate. No winner.');
+            return true;
+        }
+
+        return false;
+    }
+
 
     showPromotionMenu(pieceName, targetSquareElement, row, col) {
         pawnPromotionInProgress = true;
@@ -210,6 +242,7 @@ class ChessUI {
                     pawnOnBoard.id = newPieceName + '-' + targetSquareElement.id;
                 }
                 await fetch(`/api/promote?row=${row}&col=${col}&newPiece=${option}`, { method: 'POST' });
+                await this.updateGameOverState();
             });
 
             menu.appendChild(img);
@@ -262,6 +295,17 @@ class ChessUI {
         pieces.forEach(piece => piece.remove());
     }
 
+    showGameOverMessage(message) {
+        if (!this.gameOverOverlay || !this.gameOverTitle || !this.gameOverDetail) {
+            return;
+        }
+
+        this.gameOverTitle.textContent = 'Game Over';
+        this.gameOverDetail.textContent = message;
+        this.gameOverOverlay.classList.add('visible');
+    }
+
+
     async fetchBoard() {
         const response = await fetch('/api/board');
         const boardData = await response.json();
@@ -281,6 +325,7 @@ class ChessUI {
     }
 }
 
+let GameOver = false;
 const game = new ChessUI();
 game.createGrid();
-game.fetchBoard();
+game.fetchBoard().then(() => game.updateGameOverState());

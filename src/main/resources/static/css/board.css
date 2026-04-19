@@ -101,3 +101,41 @@
 .promotion-option:hover {
     background-color: lightblue; /* Highlights the piece they hover over */
 }
+
+.game-over-overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 10, 10, 0.72);
+    z-index: 2000;
+}
+
+.game-over-overlay.visible {
+    display: flex;
+}
+
+.game-over-card {
+    min-width: min(92vw, 420px);
+    padding: 28px 32px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: linear-gradient(145deg, rgba(32, 32, 40, 0.96), rgba(60, 60, 72, 0.96));
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    text-align: center;
+    color: #fff;
+}
+
+.game-over-card h2 {
+    margin: 0 0 12px;
+    font-size: 2rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.game-over-card p {
+    margin: 0;
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
