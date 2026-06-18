@@ -164,10 +164,12 @@ class ChessUI {
                 const text = await response2.text(); 
                 if (text) {
                     const result = JSON.parse(text); 
-                    let StartRookRow = result.rookStartSquare.row;
-                    let StartRookCol = result.rookStartSquare.col;
-                    let EndRookRow = result.rookEndSquare.row;
-                    let EndRookCol = result.rookEndSquare.col;
+                    console.log(result);``
+                    let StartRookRow = result.RookStartSquare.row;
+                    let StartRookCol = result.RookStartSquare.col;
+                    let EndRookRow = result.RookEndSquare.row;
+                    let EndRookCol = result.RookEndSquare.col;
+                    console.log("Castling Move Detected: Rook moves from (" + StartRookRow + ", " + StartRookCol + ") to (" + EndRookRow + ", " + EndRookCol + ")");
                     this.CastlingMoveRook(StartRookRow, StartRookCol, EndRookRow, EndRookCol);
                 }
 

@@ -154,6 +154,10 @@ public class Board {
     }
 
     public void resetPinPieceList() {
+
+        for(Piece pinnedPiece : currentlyPinnedPieces) {
+            pinnedPiece.removePin();        
+        }
         currentlyPinnedPieces.clear();
     }
 

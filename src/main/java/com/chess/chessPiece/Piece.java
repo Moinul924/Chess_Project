@@ -28,8 +28,7 @@ public abstract class Piece {
     }
 
 
-    public void removePin(Board board) {
-        board.currentlyPinnedPieces.remove(this);
+    public void removePin() {
         this.isPiecePinned = false;
         this.pinDirection = null;
     }
