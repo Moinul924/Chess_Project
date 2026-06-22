@@ -22,11 +22,22 @@
 }
 
 .light-square {
-    background-color: rgb(245, 212, 174);
+    background-color: #F5F5F4; 
 }
 
 .dark-square {
-    background-color: rgb(19, 121, 19);
+    background-color: #6A9B41; 
+}
+
+
+.selected-square {
+   
+    background-color: rgba(249, 249, 148, 0.8) !important; 
+}
+
+.last-move-highlight {
+   
+    background-color: rgba(181, 205, 58, 0.8) !important; 
 }
 
 .piece {

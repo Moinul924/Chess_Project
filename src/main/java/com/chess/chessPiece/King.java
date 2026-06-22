@@ -5,8 +5,6 @@ import java.util.List;
 import com.chess.Board;
 import com.chess.BoardSquare;
 import com.chess.chessMove.*;
-import com.chess.PairOfData;
-
 
 public class King extends Piece {
 
@@ -17,12 +15,12 @@ public class King extends Piece {
         {1,1}, {1,-1}, {-1,1}, {-1,-1} 
     };
 
-    private int [][] slidingOffsets = {
+    private int[][] slidingOffsets = {
         {1,0}, {-1,0}, {0,1}, {0,-1},  
         {1,1}, {1,-1}, {-1,1}, {-1,-1} 
     };
 
-    private int [][] knightOffsets = {
+    private int[][] knightOffsets = {
         {2,1}, {2,-1}, {-2,1}, {-2,-1},
         {1,2}, {1,-2}, {-1,2}, {-1,-2}
     };
@@ -31,190 +29,213 @@ public class King extends Piece {
         super(KingColour, "King");
     }
 
-    
-    public boolean checkCastlingSquareForCastling(int Row, int Col, Board board) {
-        if(PieceMoved || board.KingInCheck){
-            return false;
+    @Override
+    public int[][] getMoveOffsets() {
+        return moveOffsets;
+    }
+
+    /**
+     * Scans the board from the King's perspective to find Checks, Double Checks, and Pins.
+     * Updates the board's state arrays directly.
+     */
+    public void checkKingInCheck(BoardSquare kingCurrentSquare, Board board) {
+        board.KingInCheck = false;
+        board.squaresToBlockCheck.clear();
+        board.resetPinPieceList(); // Ensure old pins are cleared before recalculating
+
+        int kRow = kingCurrentSquare.getRow();
+        int kCol = kingCurrentSquare.getCol();
+        List<BoardSquare> attackers = new ArrayList<>();
+
+        // 1. Ray-cast outward to find sliding attackers (Queen, Rook, Bishop) and Pins
+        for (int[] dir : slidingOffsets) {
+            List<BoardSquare> currentRay = new ArrayList<>();
+            Piece friendlyPieceInRay = null;
+            boolean isOrthogonal = (dir[0] == 0 || dir[1] == 0);
+
+            for (int step = 1; step < 8; step++) {
+                int r = kRow + (dir[0] * step);
+                int c = kCol + (dir[1] * step);
+
+                if (!isWithinBounds(r, c)) break;
+
+                BoardSquare square = board.getSquare(r, c);
+                currentRay.add(square);
+
+                if (board.isSquareOccupied(r, c)) {
+                    Piece piece = square.getPiece();
+
+                    if (piece.getColour() == this.getColour()) {
+                        if (friendlyPieceInRay == null) {
+                            friendlyPieceInRay = piece; // First friendly piece, might be pinned
+                        } else {
+                            break; // Two friendly pieces block any possible attack or pin. Stop looking.
+                        }
+                    } else {
+                        // Enemy piece encountered! Let's see if it can attack us.
+                        String name = piece.getName();
+                        boolean canSlideAttack = (isOrthogonal && (name.equals("Rook") || name.equals("Queen"))) ||
+                                                 (!isOrthogonal && (name.equals("Bishop") || name.equals("Queen")));
+
+                        if (canSlideAttack) {
+                            if (friendlyPieceInRay == null) {
+                                // Direct Check!
+                                board.KingInCheck = true;
+                                attackers.add(square);
+                                board.squaresToBlockCheck.addAll(currentRay); 
+                            } else {
+                                // It's a Pin! The enemy is attacking, but our piece is in the way.
+                                int[][] pinDir = {{dir[0], dir[1]}, {-dir[0], -dir[1]}};
+                                friendlyPieceInRay.setPinDirection(pinDir);
+                                board.currentlyPinnedPieces.add(friendlyPieceInRay);
+                            }
+                        }
+                        break; // Stop looking further in this direction once we hit any enemy piece
+                    }
+                }
+            }
         }
 
+        // 2. Check Knights (Knights jump, so no rays needed)
+        for (int[] offset : knightOffsets) {
+            int r = kRow + offset[0];
+            int c = kCol + offset[1];
+            if (isWithinBounds(r, c) && board.isSquareOccupied(r, c)) {
+                Piece piece = board.getSquare(r, c).getPiece();
+                if (piece.getColour() != this.getColour() && piece.getName().equals("Knight")) {
+                    board.KingInCheck = true;
+                    attackers.add(board.getSquare(r, c));
+                    board.squaresToBlockCheck.add(board.getSquare(r, c)); // Can only block a Knight by capturing it
+                }
+            }
+        }
+
+        // 3. Check Pawns
+        int pawnDirection = (getColour() == PieceColour.WHITE) ? 1 : -1;
+        int[][] pawnAttacks = {{pawnDirection, 1}, {pawnDirection, -1}};
+        for (int[] offset : pawnAttacks) {
+            int r = kRow + offset[0];
+            int c = kCol + offset[1];
+            if (isWithinBounds(r, c) && board.isSquareOccupied(r, c)) {
+                Piece piece = board.getSquare(r, c).getPiece();
+                if (piece.getColour() != this.getColour() && piece.getName().equals("Pawn")) {
+                    board.KingInCheck = true;
+                    attackers.add(board.getSquare(r, c));
+                    board.squaresToBlockCheck.add(board.getSquare(r, c)); // Can only block a Pawn by capturing it
+                }
+            }
+        }
+
+        // 4. Handle Double Check
+        // If there are 2 or more attackers, the King MUST move. You cannot block two pieces at once.
+        if (attackers.size() > 1) {
+            board.squaresToBlockCheck.clear();
+        }
+    }
+
+    /**
+     * Pure query: Simply returns true if the square is controlled by an enemy piece.
+     * Does NOT modify pins or board state. Used for King moves and Castling.
+     */
+    public boolean isSquareAttacked(int targetRow, int targetCol, Board board) {
+        PieceColour defendingColour = this.getColour();
+
+        // 1. Sliding pieces & Enemy King
+        for (int[] dir : slidingOffsets) {
+            boolean isOrthogonal = (dir[0] == 0 || dir[1] == 0);
+            for (int step = 1; step < 8; step++) {
+                int r = targetRow + (dir[0] * step);
+                int c = targetCol + (dir[1] * step);
+
+                if (!isWithinBounds(r, c)) break;
+
+                if (board.isSquareOccupied(r, c)) {
+                    Piece piece = board.getSquare(r, c).getPiece();
+                    String name = piece.getName();
+                    if (piece.getColour() == defendingColour){
+                        if (piece.getName().equals("King")) {
+                            continue; // Ignore our own King for attack purposes
+                        }
+                        break; // Blocked by our own piece
+                    } 
+
+                    
+                    if ((isOrthogonal && (name.equals("Rook") || name.equals("Queen"))) ||
+                        (!isOrthogonal && (name.equals("Bishop") || name.equals("Queen")))) {
+                        return true;
+                    }
+                    if (name.equals("King") && step == 1) {
+                        return true; // Enemy King controls adjacent squares
+                    }
+                    break; // Blocked by some other enemy piece (like a pawn or knight)
+                }
+            }
+        }
+
+        // 2. Knights
+        for (int[] offset : knightOffsets) {
+            int r = targetRow + offset[0];
+            int c = targetCol + offset[1];
+            if (isWithinBounds(r, c) && board.isSquareOccupied(r, c)) {
+                Piece piece = board.getSquare(r, c).getPiece();
+                if (piece.getColour() != defendingColour && piece.getName().equals("Knight")) {
+                    return true;
+                }
+            }
+        }
+
+        // 3. Pawns
+        int pawnDirection = (defendingColour == PieceColour.WHITE) ? 1 : -1;
+        int[][] pawnAttacks = {{pawnDirection, 1}, {pawnDirection, -1}};
+        for (int[] offset : pawnAttacks) {
+            int r = targetRow + offset[0];
+            int c = targetCol + offset[1];
+            if (isWithinBounds(r, c) && board.isSquareOccupied(r, c)) {
+                Piece piece = board.getSquare(r, c).getPiece();
+                if (piece.getColour() != defendingColour && piece.getName().equals("Pawn")) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public boolean checkCastlingSquareForCastling(int Row, int Col, Board board) {
+        if(PieceMoved || board.KingInCheck) return false;
+
         BoardSquare CastlingSquare = board.getSquare(Row, Col);
-        if(CastlingSquare.isOccupied()){
-            return false;
-        }
+        if(CastlingSquare.isOccupied()) return false;
         
-        int [] KingSquareLocation;
-        if (getColour() == PieceColour.WHITE){
-            KingSquareLocation = board.WhiteKingSquareLocation;     
-        }else{
-            KingSquareLocation = board.BlackKingSquareLocation; 
-        }
+        int[] KingSquareLocation = (getColour() == PieceColour.WHITE) ? board.WhiteKingSquareLocation : board.BlackKingSquareLocation;
         
         int difCol = Col - KingSquareLocation[1];
         int RookCol = difCol > 0 ? 7 : 0;
         int step = difCol < 0 ? 1 : -1;
         BoardSquare RookSquare = board.getSquare(Row, RookCol);
-        Piece RookPiece = RookSquare.getPiece();
-        if(RookSquare.isOccupied() && RookPiece.getName().equals("Rook") && RookPiece.getColour() == getColour()){
-            if(((Rook)RookPiece).PieceMoved){
-                return false;
-            }
-            for(int c = Math.min(RookCol, KingSquareLocation[1]) + 1; c < Math.max(RookCol, KingSquareLocation[1]); c++){
-                if(board.isSquareOccupied(Row, c)){
-                    return false;
-                }
-            }
-            if(isTheSquareUnderAttack(Row, Col+step, board).firstData){
-                return false;
-            }
-            if(isTheSquareUnderAttack(Row, Col, board).firstData){
-                return false;
-            }
-            
-            
-            
-        }
-        return true;
         
-    }
-    
-    public PairOfData<Boolean, List<int[]>> isTheSquareUnderAttack(int targetRow, int targetCol, Board board) {
-        
-        PairOfData<Boolean, List<int[]>> checkInfo = new PairOfData<>(false, new ArrayList<>());
-        
-        for (int[] direction : slidingOffsets) {
-            int step = 1; 
-            
-            
-            while (true) {
-                int checkRow = targetRow + (direction[0] * step);
-                int checkCol = targetCol + (direction[1] * step);
+        if (RookSquare.isOccupied()) {
+            Piece RookPiece = RookSquare.getPiece();
+            if (RookPiece.getName().equals("Rook") && RookPiece.getColour() == getColour()) {
+                if (((Rook)RookPiece).PieceMoved) return false;
                 
-                if (!isWithinBounds(checkRow, checkCol)) {
-                    break; 
+                // Ensure squares between King and Rook are empty
+                for(int c = Math.min(RookCol, KingSquareLocation[1]) + 1; c < Math.max(RookCol, KingSquareLocation[1]); c++){
+                    if(board.isSquareOccupied(Row, c)) return false;
                 }
                 
-                if (board.isSquareOccupied(checkRow, checkCol)) {
-                    Piece piece = board.getSquare(checkRow, checkCol).getPiece();
-                    if(!piece.getName().equals("King")){
-                        
-                        if (getColour() == piece.getColour()) {
-                            determineIfPiecePined(checkRow, checkCol, direction, piece, board);
-                            break; 
-                        }
-                        
-                        int [][] pieceOffsets = piece.getMoveOffsets();
-                        for (int[] offset : pieceOffsets) {
-                            if (offset[0] == direction[0] && offset[1] == direction[1]) {
-                                if((piece.getName().equals("King") || piece.getName().equals("Pawn")) && step >1) {
-                                    break;
-                                }
-                                checkInfo.firstData = true;
-                                checkInfo.secondData.add(new int[]{direction[0], direction[1]});
-                                break;
-                            }
-                        } 
-                        break;  
-                    }
-                    
-                }
-                step++;
-            }
-        }
-        
-        for (int[] offset : knightOffsets) {
-            int checkRow = targetRow + offset[0];
-            int checkCol = targetCol + offset[1];
-            
-            if (isWithinBounds(checkRow, checkCol) && board.isSquareOccupied(checkRow, checkCol)) {
-                Piece piece = board.getSquare(checkRow, checkCol).getPiece();
-                if (getColour() != piece.getColour()) {
-                    
-                    if(piece.getName().equals("Knight")) {
-                        checkInfo.firstData = true;
-                        checkInfo.secondData.add(new int[]{offset[0], offset[1]});
-                        break;
-                    }
-                }
-            }
-        }
-        return checkInfo; 
-    }
-    
-    
-    public void checkKingInCheck(BoardSquare kingCurrentSquare ,Board board) {
-        
-        int currentRow = kingCurrentSquare.getRow();
-        int currentCol = kingCurrentSquare.getCol();
-        board.squaresToBlockCheck.clear();
-        PairOfData<Boolean, List<int[]>> checkInfo = isTheSquareUnderAttack(currentRow, currentCol, board);
-        
-        if (checkInfo.firstData) {
-            board.KingInCheck = true;
-            GetSquaresToBlockCheck(currentRow, currentCol, board, checkInfo.secondData);    
-        }else {
-            board.KingInCheck = false;
-        }
-    }
-    
-    public void GetSquaresToBlockCheck(int Row, int Col, Board board,List<int[]> attackDirections) {
-        if(attackDirections.size() > 1){
-            return;
-        }
-        int step = 1; 
-        while(true){
-            int checkRow = Row + (attackDirections.get(0)[0] * step);
-            int checkCol = Col + (attackDirections.get(0)[1] * step);
-            board.squaresToBlockCheck.add(board.getSquare(checkRow, checkCol));
-            if(board.isSquareOccupied(checkRow, checkCol)){
-                return;
-            }
-            step++;
-        } 
-    }
-    
-    public void determineIfPiecePined(int Row, int Col, int [] direction, Piece pinedPiece,Board board){
-        int step = 1; 
-        while (true) {
-            int checkRow = Row + (direction[0] * step);
-            int checkCol = Col + (direction[1] * step);
-            
-            if (!isWithinBounds(checkRow, checkCol)) {
-                break; 
-            }
-            
-            if (board.isSquareOccupied(checkRow, checkCol)) {
-                Piece piece = board.getSquare(checkRow, checkCol).getPiece();
-                if (getColour() == piece.getColour()) {
-                    return; 
-                }
+                // Check if castling path is under attack (using our new clean method!)
+                if (isSquareAttacked(Row, Col + step, board)) return false;
+                if (isSquareAttacked(Row, Col, board)) return false;
                 
-                if(piece.getName().equals("Knight")|| piece.getName().equals("Pawn")|| piece.getName().equals("King")) {
-                    return; 
-                }
-                int [][] pieceOffsets = piece.getMoveOffsets();
-                for (int[] offset : pieceOffsets) {
-                    if (offset[0] == direction[0] && offset[1] == direction[1]) {
-                        int[][] pinDirection = {{direction[0], direction[1]}, {-direction[0], -direction[1]}};
-                        pinedPiece.setPinDirection(pinDirection);
-                        board.currentlyPinnedPieces.add(pinedPiece);
-                        return;
-                        
-                    }
-                } 
-                return; 
+                return true;
             }
-            step++;            
         }
-        
+        return false;
     }
 
     @Override
-    public int[][] getMoveOffsets() {
-        return moveOffsets;
-    }
-    
-    @Override
-    public List<Move> getLegalMoves(BoardSquare currentSquare , Board board) {  
+    public List<Move> getLegalMoves(BoardSquare currentSquare, Board board) {  
         if (board.currentWhiteTurn && getColour() == PieceColour.BLACK || !board.currentWhiteTurn && getColour() == PieceColour.WHITE) {
             return new ArrayList<>();
         }  
@@ -226,19 +247,14 @@ public class King extends Piece {
             int newRow = currentRow + offset[0];
             int newCol = currentCol + offset[1];
     
-            if (!isWithinBounds(newRow, newCol)) {
-                continue;
-            }
+            if (!isWithinBounds(newRow, newCol)) continue;
     
             if(board.isSquareOccupied(newRow, newCol)){
-                
-                if(getColour() == board.getSquare(newRow, newCol).getPiece().getColour()){
-                    continue; 
-                }
-    
+                if(getColour() == board.getSquare(newRow, newCol).getPiece().getColour()) continue; 
             }
             
-            if (!isTheSquareUnderAttack(newRow, newCol, board).firstData) {
+            // Simplified check using our new pure boolean method
+            if (!isSquareAttacked(newRow, newCol, board)) {
                 BoardSquare targetSquare = board.getSquare(newRow, newCol);
                 Move move = new Move(currentSquare, targetSquare, this);
                 legalMoves.add(move);
@@ -247,12 +263,12 @@ public class King extends Piece {
     
         if(checkCastlingSquareForCastling(currentRow, currentCol-2, board)){
             BoardSquare targetSquare = board.getSquare(currentRow, currentCol-2);
-            CastlingMove move = new CastlingMove(currentSquare, targetSquare, this,board);
+            CastlingMove move = new CastlingMove(currentSquare, targetSquare, this, board);
             legalMoves.add(move);
         }
         if(checkCastlingSquareForCastling(currentRow, currentCol+2, board)){
             BoardSquare targetSquare = board.getSquare(currentRow, currentCol+2);
-            CastlingMove move = new CastlingMove(currentSquare, targetSquare, this,board);
+            CastlingMove move = new CastlingMove(currentSquare, targetSquare, this, board);
             legalMoves.add(move);
         }
         return legalMoves;

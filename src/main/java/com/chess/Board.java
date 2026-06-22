@@ -132,8 +132,9 @@ public class Board {
 
     public void movePiece(Move PerformMove) {
         PerformMove.execute(this);
-        resetPinPieceList();
-        currentWhiteTurn = !currentWhiteTurn;
+        if(!PerformMove.getClass().getSimpleName().equals("PawnPromotionMove")){
+           currentWhiteTurn = !currentWhiteTurn;
+        }
         CheckIsKingInCheck();
         IsCheckMate();
         StaleMate();
