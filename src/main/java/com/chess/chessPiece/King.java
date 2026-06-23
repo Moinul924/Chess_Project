@@ -9,6 +9,7 @@ import com.chess.chessMove.*;
 public class King extends Piece {
 
     public boolean PieceMoved = false;
+    public int moveCount = 0;
 
     private int[][] moveOffsets = {
         {1,0}, {-1,0}, {0,1}, {0,-1},  

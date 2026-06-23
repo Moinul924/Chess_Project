@@ -5,6 +5,7 @@ class ChessUI {
         this.gameOverOverlay = document.getElementById('game-over-overlay');
         this.gameOverTitle = document.getElementById('game-over-title');
         this.gameOverDetail = document.getElementById('game-over-detail');
+        this.undoButton = document.getElementById('undo-button');
         
         // --- Game State ---
         this.activePiece = null;
@@ -17,6 +18,7 @@ class ChessUI {
         this.mouseDownHandler = this.mouseDownHandler.bind(this);
         this.mouseMoveHandler = this.mouseMoveHandler.bind(this);
         this.mouseUpHandler = this.mouseUpHandler.bind(this);
+        this.undoButton.addEventListener('click', () => this.handleUndo());
     }
 
     // ==========================================
@@ -348,6 +350,43 @@ class ChessUI {
             col: parseInt(position[1])
         };
     }
+
+
+    async handleUndo() {
+        // 1. Prevent undo if a piece is actively being dragged or promoted
+        if (this.activePiece || this.floatingPiece || this.isPromoting) return;
+
+        // 2. Call the backend API
+        const response = await fetch('/api/undo', { method: 'POST' });
+        const responseText = await response.text();
+
+        // 3. If a move was successfully undone (backend didn't return null)
+        if (responseText) {
+            // A. Remove all current pieces from the board
+            document.querySelectorAll('.piece').forEach(piece => piece.remove());
+
+            // B. Clear any lingering visual highlights
+            this.clearLastMoveHighlights();
+            this.clearSelectedHighlight();
+            this.clearLegalMoveIndicators();
+
+            // C. Re-fetch the board state directly from the backend
+            await this.fetchBoard();
+
+            // D. Reset the Game Over state if the game was finished
+            this.isGameOver = false;
+            if (this.gameOverOverlay) {
+                this.gameOverOverlay.classList.remove('visible');
+            }
+
+            // E. Play a sound to confirm the action
+            this.playSound('move'); 
+        }
+    }
+    
+    
+
+
 }
 
 // Initialize the Game

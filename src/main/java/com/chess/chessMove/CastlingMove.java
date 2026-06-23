@@ -40,8 +40,19 @@ public class CastlingMove extends Move {
         Piece RookPiece = RookStartSquare.getPiece();
         RookStartSquare.removePiece();
         RookEndSquare.addPiece(RookPiece);
-        SetKingAndRookPieceMovedToTrue();
+        ((Rook)RookPiece).moveCount++;
+        ((Rook)RookPiece).PieceMoved = true;
         board.moveHistory.add(this); 
+    }
+
+    @Override
+    public void undo(Board board) {
+        performNormalUndo(board);
+        Piece RookPiece = RookEndSquare.getPiece();
+        RookEndSquare.removePiece();
+        RookStartSquare.addPiece(RookPiece);
+        ((Rook)RookPiece).moveCount--;
+        ((Rook)RookPiece).PieceMoved = false; 
     }
 
 

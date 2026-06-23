@@ -132,26 +132,18 @@ public class Board {
 
     public void movePiece(Move PerformMove) {
         PerformMove.execute(this);
-        if(!PerformMove.getClass().getSimpleName().equals("PawnPromotionMove")){
-           currentWhiteTurn = !currentWhiteTurn;
-        }
         CheckIsKingInCheck();
         IsCheckMate();
         StaleMate();
 
     }
 
-    public void CheckKingAction(Piece piece,BoardSquare fromSquare, BoardSquare toSquare){
-        if(!piece.getName().equals("King")){
-           return;
-        }
 
-        ((King)piece).PieceMoved = true;
-        
-        if(Math.abs(toSquare.getCol() - fromSquare.getCol()) == 2){
-            
-        }
-        
+    public void UndoMove(){
+        if(moveHistory.isEmpty()) return;
+        Move lastMove = moveHistory.remove(moveHistory.size() - 1);
+        lastMove.undo(this);
+        CheckIsKingInCheck();
     }
 
     public void resetPinPieceList() {
@@ -162,6 +154,18 @@ public class Board {
         currentlyPinnedPieces.clear();
     }
 
+
+    public void UpdateKingSquareLocation(BoardSquare targetSquare, Piece pieceMoved){
+        if(pieceMoved.getName().equals("King")){
+            if(pieceMoved.getColour() == PieceColour.WHITE){
+                WhiteKingSquareLocation[0] = targetSquare.getRow();
+                WhiteKingSquareLocation[1] = targetSquare.getCol();
+            } else {
+                BlackKingSquareLocation[0] = targetSquare.getRow();
+                BlackKingSquareLocation[1] = targetSquare.getCol();
+            }
+        }
+    }
 
     
 }

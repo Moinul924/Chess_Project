@@ -87,6 +87,7 @@ public class Pawn extends Piece {
             {-1,0}, {-2,0}, {-1,1}, {-1,-1} 
         };
     }
+
     
     
     @Override
@@ -113,6 +114,7 @@ public class Pawn extends Piece {
                 BoardSquare targetSquare = board.getSquare(newRow, newCol);
                 Move move = new Move(currentSquare, targetSquare, this);
                 legalMoves.add(move);   
+                
             }
             if(offset[1] != 0){
 
@@ -133,4 +135,31 @@ public class Pawn extends Piece {
     
         return legalMoves;
     }
+
+
+    public List<Move> getLegalMoves(BoardSquare currentSquare, Board board, boolean generatingMove) {
+        List<Move> standardMoves = getLegalMoves(currentSquare, board);
+        
+        if (!generatingMove) {
+            return standardMoves;
+        }
+        //add promotion moves if the pawn reaches the last rank
+
+        for(Move move : standardMoves) {
+            BoardSquare endSquare = move.getEndSquare();
+            if(endSquare.getRow() == 0 || endSquare.getRow() == 7) {
+                // Replace the standard move with promotion moves
+                standardMoves.remove(move);
+                standardMoves.add(new PawnPromotionMove(currentSquare, endSquare, this, new Queen(this.getColour())));
+                standardMoves.add(new PawnPromotionMove(currentSquare, endSquare, this, new Rook(this.getColour())));
+                standardMoves.add(new PawnPromotionMove(currentSquare, endSquare, this, new Bishop(this.getColour())));
+                standardMoves.add(new PawnPromotionMove(currentSquare, endSquare, this, new Knight(this.getColour())));
+            }
+        }
+
+
+
+        return standardMoves;
+    }
+
 }

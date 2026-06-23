@@ -8,6 +8,7 @@ public class Move {
     protected BoardSquare startSquare;
     protected BoardSquare endSquare;
     protected Piece pieceMoved;
+    protected Piece pieceCaptured;
     
 
     public Move(BoardSquare start, BoardSquare end, Piece piece) {
@@ -28,41 +29,86 @@ public class Move {
         return pieceMoved;
     }
 
+    public Piece getPieceCaptured() {
+        return pieceCaptured;
+    }
+
     public void SetKingAndRookPieceMovedToTrue() {
         if(pieceMoved.getName().equals("Rook")){
+            ((Rook)pieceMoved).moveCount++;
             ((Rook)pieceMoved).PieceMoved = true;
         }
         else if(pieceMoved.getName().equals("King")){
+            ((King)pieceMoved).moveCount++;
             ((King)pieceMoved).PieceMoved = true;
         }
     }
 
-    private void UpdateKingSquareLocation(Board board){
-        if(pieceMoved.getName().equals("King")){
-            if(pieceMoved.getColour() == PieceColour.WHITE){
-                board.WhiteKingSquareLocation[0] = endSquare.getRow();
-                board.WhiteKingSquareLocation[1] = endSquare.getCol();
-            } else {
-                board.BlackKingSquareLocation[0] = endSquare.getRow();
-                board.BlackKingSquareLocation[1] = endSquare.getCol();
+    public void SetKingAndRookPieceMovedToFalse() {
+        if(pieceMoved.getName().equals("Rook")){
+            ((Rook)pieceMoved).moveCount--;
+            if(((Rook)pieceMoved).moveCount == 0){
+                ((Rook)pieceMoved).PieceMoved = false;
+            }
+        }
+        else if(pieceMoved.getName().equals("King")){
+            ((King)pieceMoved).moveCount--;
+            if(((King)pieceMoved).moveCount == 0){
+                ((King)pieceMoved).PieceMoved = false;
             }
         }
     }
 
+    
+
     protected void performNormalMove(Board board) {
         startSquare.removePiece();
         if (endSquare.isOccupied()) {
+            pieceCaptured = endSquare.getPiece();
             endSquare.removePiece();
         }
         endSquare.addPiece(pieceMoved);
         SetKingAndRookPieceMovedToTrue();
-        UpdateKingSquareLocation(board);
+        board.UpdateKingSquareLocation(endSquare, pieceMoved);
+        board.currentWhiteTurn = !board.currentWhiteTurn;
     }
 
+  
     public void execute(Board board) {
         performNormalMove(board);
         board.moveHistory.add(this);
     }
+
+    public void performNormalUndo(Board board) {
+        endSquare.removePiece();
+        startSquare.addPiece(pieceMoved);
+        if (pieceCaptured != null) {
+            endSquare.addPiece(pieceCaptured);
+        }
+        UndoBoardStates(board);
+        board.currentWhiteTurn = !board.currentWhiteTurn;
+    }
+
+    public void undo(Board board) {
+        performNormalUndo(board);
+    }
+
+    public void UndoBoardStates(Board board) {
+        if(board.KingInCheck){
+            board.KingInCheck = false;
+        }
+        if(board.CheckMate){
+            board.CheckMate = false;
+        }
+        if(board.StaleMate){
+            board.StaleMate = false;
+        }
+       
+        board.UpdateKingSquareLocation(startSquare, pieceMoved);
+        SetKingAndRookPieceMovedToFalse();
+
+    }
+
 
 
     

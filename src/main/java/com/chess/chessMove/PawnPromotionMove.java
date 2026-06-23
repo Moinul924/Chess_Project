@@ -17,6 +17,7 @@ public class PawnPromotionMove extends Move {
         if(board.moveHistory.size() > 0){
             Move LastMove = board.moveHistory.getLast();
             if(LastMove.pieceMoved.getName().equals("Pawn") && LastMove.startSquare == this.startSquare){
+                pieceCaptured = LastMove.pieceCaptured;
                 board.moveHistory.remove(board.moveHistory.size() - 1);
             }
             
@@ -32,6 +33,11 @@ public class PawnPromotionMove extends Move {
         endSquare.addPiece(promotedPiece);
         RemovePriveousMoveFromMoveHistory(board);
         board.moveHistory.add(this);
+    }
+
+    @Override
+    public void undo(Board board) {
+        performNormalUndo(board);
     }
     
 }

@@ -131,4 +131,17 @@ public class GameController {
         return null;
 
     }
+
+
+    @PostMapping("/undo")
+    public Move handleUndoMove() {
+        System.out.println("--- UNDO MOVE ---");
+        if (gameBoard.moveHistory.isEmpty()) {
+            return null;
+        }
+        Move lastMove = gameBoard.moveHistory.getLast();
+        gameBoard.UndoMove();
+        return lastMove;
+    }
+
 }

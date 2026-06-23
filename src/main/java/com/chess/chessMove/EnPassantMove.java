@@ -6,6 +6,7 @@ import com.chess.chessPiece.*;;
 
 public class EnPassantMove extends Move {
     private BoardSquare capturedPawnSquare;
+    private Piece pieceCaptured;// will this cause a bug 
 
     public EnPassantMove(BoardSquare start, BoardSquare end, Piece piece, BoardSquare capturedPawnSquare) {
         super(start, end, piece);
@@ -16,12 +17,22 @@ public class EnPassantMove extends Move {
         return capturedPawnSquare;
     }
 
+    public Piece getPieceCaptured() {
+        return pieceCaptured;
+    }
+
 
     @Override
     public void execute(Board board) {
         performNormalMove(board);
+        pieceCaptured = capturedPawnSquare.getPiece();
         capturedPawnSquare.removePiece();
         board.moveHistory.add(this);
     }
-    
+
+    @Override
+    public void undo(Board board) {
+        performNormalUndo(board);
+        capturedPawnSquare.addPiece(this.pieceCaptured);
+    }
 }

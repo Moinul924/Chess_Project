@@ -48,4 +48,9 @@ public abstract class Piece {
 
     public abstract int[][] getMoveOffsets(); 
     public abstract List<Move> getLegalMoves(BoardSquare currentSquare, Board board);  
+
+    // The overloaded version! By default, it just calls the normal one.
+    public List<Move> getLegalMoves(BoardSquare currentSquare, Board board, boolean generatingMove) {
+        return getLegalMoves(currentSquare, board);
+    }
 }
