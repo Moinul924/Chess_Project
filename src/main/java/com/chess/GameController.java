@@ -92,7 +92,45 @@ public class GameController {
         
     }
 
-    @PostMapping("/promote")
+
+    @GetMapping("/promotion")
+    public Move IsLastMovePawnPromotion(){
+
+        System.out.println("--- PAWN PROMOTION MOVE CHECK ---");
+
+        if (gameBoard.moveHistory.isEmpty()) {
+            return null;
+        }
+        
+        Move lastMove = gameBoard.moveHistory.getLast();
+        if(lastMove instanceof PawnPromotionMove){
+            return (PawnPromotionMove)lastMove;
+        }
+
+        return null;
+
+
+    }
+
+    @GetMapping("/EnPassant")
+    public Move IsLastMoveEnPassant(){
+        System.out.println("--- EnPassant MOVE CHECK ---");
+
+        if (gameBoard.moveHistory.isEmpty()) {
+            return null;
+        }
+        
+        Move lastMove = gameBoard.moveHistory.getLast();
+        if(lastMove instanceof EnPassantMove){
+            return (EnPassantMove)lastMove;
+        }
+
+        return null;
+
+    }
+
+
+    @PostMapping("/promote_for_user")
     public void handlePawnPromotion(@RequestParam int row, @RequestParam int col, @RequestParam String newPiece) {
         System.out.println("--- PAWN PROMOTED TO " + newPiece + " ---");
         
@@ -115,23 +153,6 @@ public class GameController {
     }
 
 
-    @GetMapping("/EnPassant")
-    public Move IsLastMoveEnPassant(){
-        System.out.println("--- EnPassant MOVE CHECK ---");
-
-        if (gameBoard.moveHistory.isEmpty()) {
-            return null;
-        }
-        
-        Move lastMove = gameBoard.moveHistory.getLast();
-        if(lastMove instanceof EnPassantMove){
-            return (EnPassantMove)lastMove;
-        }
-
-        return null;
-
-    }
-
 
     @PostMapping("/undo")
     public Move handleUndoMove() {
@@ -143,5 +164,19 @@ public class GameController {
         gameBoard.UndoMove();
         return lastMove;
     }
+
+    @PostMapping("/EngineMove")
+    public Move handleEngineMove() {    
+        System.out.println("--- ENGINE MOVE ---");
+        Engine engine = new Engine(gameBoard);
+        Move randomMove = engine.getRandomMove();
+        if (randomMove != null) {
+            gameBoard.movePiece(randomMove);
+            return randomMove;
+        }
+        return null;
+    }
+
+
 
 }

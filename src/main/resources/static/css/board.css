@@ -150,3 +150,52 @@
     font-size: 1.1rem;
     line-height: 1.5;
 }
+
+
+.controls-container {
+    position: absolute;
+    /* Places the buttons 30px below the 640px board */
+    top: calc(50% + 350px); 
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+    z-index: 10;
+}
+
+.btn {
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #fff;
+    background-color: rgba(60, 60, 72, 0.96); /* Matches your game-over card */
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.btn:hover {
+    background-color: rgba(80, 80, 92, 0.96);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3);
+}
+
+.btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Specific style to make the Play Engine button pop */
+.btn-primary {
+    background-color: rgb(105, 16, 146);
+    border-color: rgb(135, 36, 186);
+}
+
+.btn-primary:hover {
+    background-color: rgb(125, 26, 166);
+}

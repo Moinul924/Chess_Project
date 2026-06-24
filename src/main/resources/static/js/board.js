@@ -6,6 +6,7 @@ class ChessUI {
         this.gameOverTitle = document.getElementById('game-over-title');
         this.gameOverDetail = document.getElementById('game-over-detail');
         this.undoButton = document.getElementById('undo-button');
+        this.engineButton = document.getElementById('play-engine-button');
         
         // --- Game State ---
         this.activePiece = null;
@@ -13,12 +14,15 @@ class ChessUI {
         this.isGameOver = false;
         this.isPromoting = false;
         this.soundMade = false;
+        this.playEngine = false;
+        this.showMade = false;
 
         // --- Bind Event Contexts ---
         this.mouseDownHandler = this.mouseDownHandler.bind(this);
         this.mouseMoveHandler = this.mouseMoveHandler.bind(this);
         this.mouseUpHandler = this.mouseUpHandler.bind(this);
         this.undoButton.addEventListener('click', () => this.handleUndo());
+        this.engineButton.addEventListener('click', () => this.handlePlayEngine());
     }
 
     // ==========================================
@@ -133,10 +137,41 @@ class ChessUI {
 
         if (targetSquareElement?.classList.contains('square')) {
             await this.processMoveAttempt(targetElement, targetSquareElement, startSquareElement);
+            if (this.playEngine && !this.isGameOver && !this.isPromoting && this.moveMade) {
+                await this.handleEngineMove();
+                this.moveMade = false; // Reset after engine move
+            }
         }
         
         this.activePiece = null;
     }
+
+
+    async handleEngineMove() 
+    {
+        const response = await fetch('/api/EngineMove', { method: 'POST' });
+        const engineMoveData = await response.json();
+        if (!engineMoveData) return;
+        const startRow = engineMoveData.startSquare.row;
+        const startCol = engineMoveData.startSquare.col;
+        const endRow = engineMoveData.endSquare.row;
+        const endCol = engineMoveData.endSquare.col;
+
+        // 2. Convert to your HTML IDs (e.g., "e2" and "e4")
+        const startId = this.convertIndicesToPosition(startRow, startCol);
+        const endId = this.convertIndicesToPosition(endRow, endCol);
+
+        // 3. Grab the Square Elements from the DOM
+        const startSquareElement = document.getElementById(startId);
+        const targetSquareElement = document.getElementById(endId);
+        const pieceOnTarget = targetSquareElement.querySelector('.piece');
+        const targetElement = pieceOnTarget ? pieceOnTarget : targetSquareElement;
+        this.activePiece = startSquareElement.querySelector('.piece');
+        const pieceName = this.activePiece.id.split('-')[0];
+        const position = { row: endRow, col: endCol };
+        await this.makeMove(targetElement, targetSquareElement, startSquareElement, pieceName, position);
+    }
+
 
     // ==========================================
     // MOVE LOGIC & API COMMUNICATION
@@ -148,9 +183,16 @@ class ChessUI {
         
         const response = await fetch(`/api/moved?row=${position.row}&col=${position.col}&name=${pieceName}`, { method: 'POST' });
         const isMoveLegal = await response.json(); 
-
+        this.moveMade = false;
         if (isMoveLegal) {
+            this.moveMade = true;
             this.soundMade = false;
+            await this.makeMove(targetElement, targetSquareElement, startSquareElement, pieceName, position);
+
+        }
+    }
+
+    async makeMove(targetElement, targetSquareElement, startSquareElement, pieceName, position) {
             const isCapture = targetElement.classList.contains('piece');
 
             // --- Apply Last Move Highlights ---
@@ -175,15 +217,21 @@ class ChessUI {
             if (!this.soundMade) {
                 this.playSound(isCapture ? 'capture' : 'move');
             }
-        }
     }
 
     async handleSpecialMoves(pieceName, targetSquareElement, position) {
-        // Pawn Promotion
-        if (pieceName.includes('Pawn') && (position.row === 0 || position.row === 7)) {
-            this.showPromotionMenu(pieceName, targetSquareElement, position.row, position.col);
-            return; // Exit early so game over isn't checked until promotion finishes
+
+        const promotionRes = await fetch('/api/promotion');
+        const promotionText = await promotionRes.text();
+        if (promotionText) {
+            const data = JSON.parse(promotionText);
+            console.log("Promotion Data:", data);
+            this.executePromotionUI(data.endSquare, data.promotedPiece);
+            this.playSound('promote');
+            return;
         }
+        // Pawn Promotion
+        
 
         // Castling
         const castleRes = await fetch('/api/castle');
@@ -192,6 +240,7 @@ class ChessUI {
             const data = JSON.parse(castleText); 
             this.executeCastlingUI(data.RookStartSquare, data.RookEndSquare);
             this.playSound('castal');
+            return; 
         }
 
         // En Passant
@@ -201,7 +250,16 @@ class ChessUI {
             const data = JSON.parse(enPassantText);
             this.executeEnPassantUI(data.capturedPawnSquare);
             this.playSound('capture');
+            return;
         }
+
+        // Pawn Promotion
+        if (pieceName.includes('Pawn') && (position.row === 0 || position.row === 7)) {
+            this.showPromotionMenu(pieceName, targetSquareElement, position.row, position.col);
+            return; // Exit early so game over isn't checked until promotion finishes
+        }
+
+
     }
 
     // ==========================================
@@ -268,7 +326,7 @@ class ChessUI {
                     pawnOnBoard.id = `${newPieceName}-${targetSquareElement.id}`;
                 }
                 
-                await fetch(`/api/promote?row=${row}&col=${col}&newPiece=${option}`, { method: 'POST' });
+                await fetch(`/api/promote_for_user?row=${row}&col=${col}&newPiece=${option}`, { method: 'POST' });
                 await this.updateGameOverState();
             });
 
@@ -297,6 +355,14 @@ class ChessUI {
     executeEnPassantUI(capturedSquare) {
         const captureId = this.convertIndicesToPosition(capturedSquare.row, capturedSquare.col);
         document.getElementById(captureId)?.querySelector('.piece')?.remove();
+    }
+
+    executePromotionUI(promotionSquare, newPiece) {
+        const pieceName = newPiece.name;
+        const pieceColor = newPiece.colour[0]; 
+        const PawnID = this.convertIndicesToPosition(promotionSquare.row, promotionSquare.col);
+        document.getElementById(PawnID)?.querySelector('.piece')?.remove();
+        this.addPiece(pieceColor + pieceName, String.fromCharCode(97 + promotionSquare.row) + promotionSquare.col);
     }
 
     // ==========================================
@@ -384,6 +450,10 @@ class ChessUI {
         }
     }
     
+
+    async handlePlayEngine() {
+        this.playEngine = true;
+    }
     
 
 

@@ -3,7 +3,7 @@ package com.chess;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.chess.chessMove.Move;
+import com.chess.chessMove.*;
 import com.chess.chessPiece.PieceColour;
 
 public class Engine {
@@ -16,14 +16,14 @@ public class Engine {
     int HighestDepth = 0;
     int PossitionEvaluated = 0;
     int numOfsimilarepossition = 0;
-    List<Move> AllCurrentLegalMoves = new ArrayList<>();
+    
 
     public Engine(Board board) {
         this.Board = board;
     }
 
-    public void generateAllCurrentLegalMoves() {
-        AllCurrentLegalMoves.clear();
+    public List<Move> generateAllCurrentLegalMoves() {
+        List<Move> AllCurrentLegalMoves = new ArrayList<>();
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
                 BoardSquare square = Board.getSquare(row, col);
@@ -32,6 +32,25 @@ public class Engine {
                 }
             }
         }
+        return AllCurrentLegalMoves;
     }
+
+    public Move getRandomMove() {
+        List<Move> legalMoves = generateAllCurrentLegalMoves();
+        for(Move move : legalMoves) {
+            if(move instanceof PawnPromotionMove || move instanceof CastlingMove || move instanceof EnPassantMove) {
+                return move; 
+            }
+        }
+        if (!legalMoves.isEmpty()) {
+            int randomIndex = (int) (Math.random() * legalMoves.size());
+            return legalMoves.get(randomIndex);
+        }
+        return null; // No legal moves available
+    }
+
+
+
+
 
 }

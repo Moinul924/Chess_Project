@@ -70,6 +70,9 @@ public class Move {
         endSquare.addPiece(pieceMoved);
         SetKingAndRookPieceMovedToTrue();
         board.UpdateKingSquareLocation(endSquare, pieceMoved);
+        if(pieceMoved.getName().equals("Pawn") && (endSquare.getRow() == 0 || endSquare.getRow() == 7)){
+            return;
+        }
         board.currentWhiteTurn = !board.currentWhiteTurn;
     }
 

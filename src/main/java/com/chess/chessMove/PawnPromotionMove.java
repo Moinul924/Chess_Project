@@ -6,12 +6,17 @@ import com.chess.chessPiece.*;
 
 public class PawnPromotionMove extends Move {
 
-    Piece promotedPiece;
+    private Piece promotedPiece;
 
     public PawnPromotionMove(BoardSquare start, BoardSquare end, Piece piece, Piece promotedPiece) {
         super(start, end, piece);
         this.promotedPiece = promotedPiece;
     }
+
+    public Piece getPromotedPiece() {
+        return promotedPiece;
+    }
+
 
     public void RemovePriveousMoveFromMoveHistory(Board board){
         if(board.moveHistory.size() > 0){
@@ -33,6 +38,7 @@ public class PawnPromotionMove extends Move {
         endSquare.addPiece(promotedPiece);
         RemovePriveousMoveFromMoveHistory(board);
         board.moveHistory.add(this);
+        board.currentWhiteTurn = !board.currentWhiteTurn;
     }
 
     @Override

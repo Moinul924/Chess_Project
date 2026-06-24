@@ -145,21 +145,23 @@ public class Pawn extends Piece {
         }
         //add promotion moves if the pawn reaches the last rank
 
+        List<Move> movesWithPromotions = new ArrayList<>();
         for(Move move : standardMoves) {
             BoardSquare endSquare = move.getEndSquare();
             if(endSquare.getRow() == 0 || endSquare.getRow() == 7) {
                 // Replace the standard move with promotion moves
-                standardMoves.remove(move);
-                standardMoves.add(new PawnPromotionMove(currentSquare, endSquare, this, new Queen(this.getColour())));
-                standardMoves.add(new PawnPromotionMove(currentSquare, endSquare, this, new Rook(this.getColour())));
-                standardMoves.add(new PawnPromotionMove(currentSquare, endSquare, this, new Bishop(this.getColour())));
-                standardMoves.add(new PawnPromotionMove(currentSquare, endSquare, this, new Knight(this.getColour())));
+                movesWithPromotions.add(new PawnPromotionMove(currentSquare, endSquare, this, new Queen(this.getColour())));
+                movesWithPromotions.add(new PawnPromotionMove(currentSquare, endSquare, this, new Rook(this.getColour())));
+                movesWithPromotions.add(new PawnPromotionMove(currentSquare, endSquare, this, new Bishop(this.getColour())));
+                movesWithPromotions.add(new PawnPromotionMove(currentSquare, endSquare, this, new Knight(this.getColour())));
+                continue; // Skip adding the standard move since it's replaced by promotion moves
             }
+            movesWithPromotions.add(move); // Add the standard move as well
         }
 
 
 
-        return standardMoves;
+        return movesWithPromotions;
     }
 
 }
