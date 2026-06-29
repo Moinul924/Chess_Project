@@ -15,6 +15,7 @@ public class Bishop extends Piece {
 
     public Bishop(PieceColour BishopColour) {
         super(BishopColour, "Bishop");
+        this.pieceValue = 300;
     }
 
     

@@ -16,6 +16,7 @@ public class Pawn extends Piece {
 
     public Pawn(PieceColour PawnColour) {
         super(PawnColour, "Pawn");
+        pieceValue = 100;
     }
 
     

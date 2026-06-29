@@ -17,6 +17,7 @@ public class Knight extends Piece {
 
     public Knight(PieceColour KnightColour) {
         super(KnightColour, "Knight");
+        pieceValue = 300;
     }
 
     

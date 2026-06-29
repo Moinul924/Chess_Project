@@ -170,7 +170,9 @@ class ChessUI {
         const pieceName = this.activePiece.id.split('-')[0];
         const position = { row: endRow, col: endCol };
         await this.makeMove(targetElement, targetSquareElement, startSquareElement, pieceName, position);
+        this.activePiece = null; // Clear the active piece so the human player can pick up pieces again
     }
+
 
 
     // ==========================================
@@ -328,6 +330,10 @@ class ChessUI {
                 
                 await fetch(`/api/promote_for_user?row=${row}&col=${col}&newPiece=${option}`, { method: 'POST' });
                 await this.updateGameOverState();
+                if (this.playEngine && !this.isGameOver) {
+                    await this.handleEngineMove();
+                }
+                
             });
 
             menu.appendChild(img);

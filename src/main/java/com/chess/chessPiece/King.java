@@ -28,7 +28,9 @@ public class King extends Piece {
 
     public King(PieceColour KingColour) {
         super(KingColour, "King");
+        this.pieceValue = 0; // King is invaluable
     }
+
 
     @Override
     public int[][] getMoveOffsets() {

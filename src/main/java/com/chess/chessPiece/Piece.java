@@ -9,8 +9,8 @@ import com.chess.chessMove.Move;
 public abstract class Piece {
     private PieceColour colour;
     private String name; 
-
     
+    protected int pieceValue;
     protected boolean isPiecePinned = false;
     protected int[][] pinDirection = null; 
 
@@ -25,6 +25,14 @@ public abstract class Piece {
     public void setPinDirection(int[][] directionsPiecePinedIn) {
         this.isPiecePinned = true;
         this.pinDirection = directionsPiecePinedIn;
+    }
+
+    public int getPieceValue() {
+        return pieceValue;
+    }
+
+    public void changePieceValue(int amount) {
+        this.pieceValue += amount;
     }
 
 

@@ -29,8 +29,23 @@ public class Move {
         return pieceMoved;
     }
 
+
     public Piece getPieceCaptured() {
         return pieceCaptured;
+    }
+
+    public boolean goodCapture(){
+        if(pieceCaptured == null){
+            return false;
+        }
+        if(pieceMoved.getPieceValue() <= pieceCaptured.getPieceValue()){
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isCaptureMove() {
+        return pieceCaptured != null;
     }
 
     public void SetKingAndRookPieceMovedToTrue() {

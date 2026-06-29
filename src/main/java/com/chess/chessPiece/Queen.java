@@ -17,6 +17,7 @@ public class Queen extends Piece {
     
     public Queen(PieceColour QueenColour) {
         super(QueenColour, "Queen");
+        pieceValue = 900;
     }
     
     @Override

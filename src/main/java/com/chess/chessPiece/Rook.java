@@ -19,6 +19,7 @@ public class Rook extends Piece {
         
     public Rook(PieceColour RookColour) {
         super(RookColour, "Rook");
+        pieceValue = 500;
     }
     
     @Override

@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class GameController {
 
     private Board gameBoard = new Board(); 
+    private Engine engine = new Engine(gameBoard);
     private BoardSquare selectedSquare = null;
     private BoardSquare targetSquare = null;
     
@@ -168,13 +169,21 @@ public class GameController {
     @PostMapping("/EngineMove")
     public Move handleEngineMove() {    
         System.out.println("--- ENGINE MOVE ---");
-        Engine engine = new Engine(gameBoard);
-        Move randomMove = engine.getRandomMove();
-        if (randomMove != null) {
-            gameBoard.movePiece(randomMove);
-            return randomMove;
+        
+        // Move randomMove = engine.getRandomMove();
+        // if (randomMove != null) {
+        //     gameBoard.movePiece(randomMove);
+        //     return randomMove;
+        // }
+        // return null;
+        Move bestMove = engine.getMoveUsingMinMax(3); // You can adjust the depth as needed
+        if (bestMove != null) {
+            gameBoard.movePiece(bestMove);
+            return bestMove;
         }
         return null;
+
+
     }
 
 
