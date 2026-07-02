@@ -7,6 +7,10 @@ class ChessUI {
         this.gameOverDetail = document.getElementById('game-over-detail');
         this.undoButton = document.getElementById('undo-button');
         this.engineButton = document.getElementById('play-engine-button');
+        this.fenInput = document.getElementById('fen-input');
+        this.loadFenButton = document.getElementById('load-fen-button');
+        this.loadFenButton.addEventListener('click', () => this.handleLoadFen());
+        this.flipButton = document.getElementById('flip-board-button');
         
         // --- Game State ---
         this.activePiece = null;
@@ -16,6 +20,7 @@ class ChessUI {
         this.soundMade = false;
         this.playEngine = false;
         this.showMade = false;
+        this.flipBoard = false;
 
         // --- Bind Event Contexts ---
         this.mouseDownHandler = this.mouseDownHandler.bind(this);
@@ -23,6 +28,7 @@ class ChessUI {
         this.mouseUpHandler = this.mouseUpHandler.bind(this);
         this.undoButton.addEventListener('click', () => this.handleUndo());
         this.engineButton.addEventListener('click', () => this.handlePlayEngine());
+        this.flipButton.addEventListener('click', () => this.toggleFlip());
     }
 
     // ==========================================
@@ -460,10 +466,61 @@ class ChessUI {
     async handlePlayEngine() {
         this.playEngine = true;
     }
+
+    async handleLoadFen() {
+        const fenString = this.fenInput.value.trim();
+        if (!fenString) return;
+
+        try {
+            // Send the string to the backend, encoding it so special characters (like '/') don't break the URL
+            const response = await fetch(`/api/load-fen?fen=${encodeURIComponent(fenString)}`, { method: 'POST' });
+            const success = await response.json();
+
+            if (success) {
+                // 1. Clear the physical board DOM
+                document.querySelectorAll('.piece').forEach(piece => piece.remove());
+                this.clearLastMoveHighlights();
+                this.clearSelectedHighlight();
+                this.clearLegalMoveIndicators();
+
+                // 2. Reset frontend state
+                this.activePiece = null;
+                if (this.floatingPiece) {
+                    this.floatingPiece.remove();
+                    this.floatingPiece = null;
+                }
+                this.isGameOver = false;
+                if (this.gameOverOverlay) {
+                    this.gameOverOverlay.classList.remove('visible');
+                }
+
+                // 3. Fetch the newly generated board from the backend
+                await this.fetchBoard();
+                await this.updateGameOverState();
+                this.playSound('move');
+                
+            } else {
+                alert("Invalid FEN string format! Check the backend console for the exact error.");
+            }
+        } catch (error) {
+            console.error("Error loading FEN:", error);
+        }
+    }
+
+    toggleFlip() {
+        this.flipBoard = !this.flipBoard;
+        
+        if (this.flipBoard) {
+            this.boardElement.classList.add('flipped');
+        } else {
+            this.boardElement.classList.remove('flipped');
+        }
+    }
+}
     
 
 
-}
+
 
 // Initialize the Game
 const game = new ChessUI();

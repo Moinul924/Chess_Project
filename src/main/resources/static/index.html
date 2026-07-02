@@ -7,24 +7,39 @@
     <title>Chess Game</title>
 </head>
 <body>
-    <h1>Welcome to the  hvh Chess Game!</h1>
+    <h1>Welcome to the hvh Chess Game!</h1>
 
-    <div class = "grid-board">
+    <!-- New Flexbox Wrapper -->
+    <div class="game-layout">
+        
+        <!-- Left Side: Controls & FEN -->
+        <div class="left-panel">
+            <div class="controls-container">
+                <button id="undo-button" class="btn">Undo Move</button>
+                <button id="play-engine-button" class="btn btn-primary">Play Engine</button>
+                <button id="flip-board-button" class="btn">Flip Board</button>
+            </div>
+
+            <div class="fen-container">
+                <input type="text" id="fen-input" placeholder="Paste FEN string here" autocomplete="off">
+                <button id="load-fen-button" class="btn">Load</button>
+            </div>
+        </div>
+
+        <!-- Right Side: The Board -->
+        <div class="right-panel">
+            <div class="grid-board"></div>
+        </div>
+
     </div>
 
+    <!-- Overlays stay outside the main layout -->
     <div id="game-over-overlay" class="game-over-overlay" aria-live="polite" aria-atomic="true">
         <div class="game-over-card">
             <h2 id="game-over-title">Game Over</h2>
             <p id="game-over-detail"></p>
         </div>
     </div>
-
-    <div class="controls-container">
-        <button id="undo-button" class="btn">Undo Move</button>
-        <button id="play-engine-button" class="btn btn-primary">Play Engine</button>
-    </div>
-
-
 
 </body>
 <script src="./js/board.js"></script>

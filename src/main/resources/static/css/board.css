@@ -1,18 +1,12 @@
+
 .grid-board {
     display: grid;
-    grid-template-columns: repeat(8,1fr);
+    grid-template-columns: repeat(8, 1fr);
     width: 640px;
-    position: absolute;
-    top : 50%;
-    left: 50%;
-    translate: -50% -50%;
-    border: 10px solid rgb(105, 16, 146) ;
+    /* Removed absolute positioning and top/left translates */
+    border: 10px solid rgb(105, 16, 146);
     border-radius: 10px;
-
     user-select: none;
-    
-
-    
 }
 
 .square {
@@ -56,6 +50,22 @@
     z-index: 1000;        
     transform: translate(-50%, -50%); 
 }
+
+.grid-board.flipped .piece {
+    transform: rotate(180deg);
+}
+
+.grid-board.flipped {
+    transform: rotate(180deg);
+}
+
+
+
+/* Keep the floating piece upright when dragging */
+.dragging-piece.flipped-drag {
+    transform: rotate(180deg);
+}
+
 
 .legal-move-indicator {
     position: absolute;
@@ -153,11 +163,7 @@
 
 
 .controls-container {
-    position: absolute;
-    /* Places the buttons 30px below the 640px board */
-    top: calc(50% + 350px); 
-    left: 50%;
-    transform: translateX(-50%);
+    /* Removed absolute positioning */
     display: flex;
     gap: 20px;
     z-index: 10;
@@ -198,4 +204,61 @@
 
 .btn-primary:hover {
     background-color: rgb(125, 26, 166);
+}
+
+.fen-container {
+    /* Removed absolute positioning */
+    display: flex;
+    gap: 12px;
+    z-index: 10;
+    width: 100%;
+    max-width: 550px;
+}
+
+#fen-input {
+    flex-grow: 1;
+    padding: 12px 16px;
+    font-size: 1rem;
+    color: #fff;
+    background-color: rgba(32, 32, 40, 0.96); /* Matches your game over card */
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    font-family: inherit;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+#fen-input:focus {
+    outline: none;
+    border-color: rgb(135, 36, 186); /* Highlights in purple to match your primary theme */
+    box-shadow: 0 0 8px rgba(135, 36, 186, 0.6);
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centers the H1 and the layout horizontally */
+    font-family: sans-serif;
+    background-color: #2c2c2c; /* Optional: dark background */
+}
+
+h1 {
+    color: white;
+    margin-bottom: 40px;
+}
+
+.game-layout {
+    display: flex;
+    flex-direction: row; /* Puts children side-by-side */
+    align-items: center; /* Vertically centers the items */
+    justify-content: center;
+    gap: 60px; /* Space between the left panel and the board */
+    width: 100%;
+    max-width: 1200px;
+}
+
+.left-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 30px; /* Space between buttons and FEN input */
+    align-items: flex-start;
 }

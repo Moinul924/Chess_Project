@@ -26,13 +26,13 @@ public class EnPassantMove extends Move {
     public void execute(Board board) {
         performNormalMove(board);
         pieceCaptured = capturedPawnSquare.getPiece();
-        capturedPawnSquare.removePiece();
+        capturedPawnSquare.removePiece(board);
         board.moveHistory.add(this);
     }
 
     @Override
     public void undo(Board board) {
         performNormalUndo(board);
-        capturedPawnSquare.addPiece(this.pieceCaptured);
+        capturedPawnSquare.addPiece(this.pieceCaptured, board);
     }
 }

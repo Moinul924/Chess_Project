@@ -186,6 +186,26 @@ public class GameController {
 
     }
 
+    @PostMapping("/load-fen")
+    public boolean loadFenString(@RequestParam String fen) {
+        System.out.println("--- LOADING NEW FEN ---");
+        try {
+            Board newBoard = new Board();
+            
+            FEN fenParser = new FEN();
+            fenParser.CreateBoard(newBoard, fen);
+            
+            // Overwrite the old board and re-link the engine
+            this.gameBoard = newBoard;
+            this.engine = new Engine(this.gameBoard); 
+            
+            return true; 
+        } catch (Exception e) {
+            System.out.println("Failed to load FEN: " + e.getMessage());
+            return false; 
+        }
+    }
+
 
 
 }

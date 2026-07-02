@@ -77,16 +77,16 @@ public class Move {
     
 
     protected void performNormalMove(Board board) {
-        startSquare.removePiece();
+        startSquare.removePiece(board);
         if (endSquare.isOccupied()) {
             pieceCaptured = endSquare.getPiece();
-            endSquare.removePiece();
+            endSquare.removePiece(board);
         }
-        endSquare.addPiece(pieceMoved);
+        endSquare.addPiece(pieceMoved, board);
         SetKingAndRookPieceMovedToTrue();
         board.UpdateKingSquareLocation(endSquare, pieceMoved);
-        if(pieceMoved.getName().equals("Pawn") && (endSquare.getRow() == 0 || endSquare.getRow() == 7)){
-            return;
+        if(pieceMoved.getName().equals("Pawn") && (endSquare.getRow() == 0 || endSquare.getRow() == 7)){ 
+            return;  // sice the pawn is in a promotion square, we do not want to change the turn yet. The turn will be changed after the player promotes the pawn.
         }
         board.currentWhiteTurn = !board.currentWhiteTurn;
     }
@@ -98,10 +98,10 @@ public class Move {
     }
 
     public void performNormalUndo(Board board) {
-        endSquare.removePiece();
-        startSquare.addPiece(pieceMoved);
+        endSquare.removePiece(board);
+        startSquare.addPiece(pieceMoved, board);
         if (pieceCaptured != null) {
-            endSquare.addPiece(pieceCaptured);
+            endSquare.addPiece(pieceCaptured, board);
         }
         UndoBoardStates(board);
         board.currentWhiteTurn = !board.currentWhiteTurn;

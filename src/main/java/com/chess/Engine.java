@@ -2,10 +2,8 @@ package com.chess;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Comparator;
 
 import com.chess.chessMove.*;
-import com.chess.chessPiece.PieceColour;
 
 
 public class Engine {
@@ -25,18 +23,29 @@ public class Engine {
 
     public List<Move> generateAllCurrentLegalMoves() {
         List<Move> allCurrentLegalMoves = new ArrayList<>();
-        for (int row = 0; row < 8; row++) {
-            for (int col = 0; col < 8; col++) {
-                BoardSquare square = board.getSquare(row, col);
-                if (square.isOccupied() && ((board.currentWhiteTurn && square.getPiece().getColour() == PieceColour.WHITE) ||
-                 (!board.currentWhiteTurn && square.getPiece().getColour() == PieceColour.BLACK))) {
-                    allCurrentLegalMoves.addAll(square.getPiece().getLegalMoves(square, board , true));
-                }
+        if(board.currentWhiteTurn){
+            for(BoardSquare square : board.locationOfWhitePieces){
+                List<Move> pieceLegalMoves = square.getPiece().getLegalMoves(square, board);
+                allCurrentLegalMoves.addAll(pieceLegalMoves);
+            }
+        }
+        else{
+            for(BoardSquare square : board.locationOfBlackPieces){
+                List<Move> pieceLegalMoves = square.getPiece().getLegalMoves(square, board);
+                allCurrentLegalMoves.addAll(pieceLegalMoves);
             }
         }
         allCurrentLegalMoves = reorderMovesBestToWorst(allCurrentLegalMoves);
         return allCurrentLegalMoves;
     }
+
+    public List<Move> generateAllCaptureMoves(){
+        List<Move> allCurrentLegalMoves =  generateAllCurrentLegalMoves();
+        allCurrentLegalMoves.removeIf(move -> !move.isCaptureMove());
+        return allCurrentLegalMoves;
+    }
+
+
 
     public Move getRandomMove() {
         List<Move> allCurrentLegalMoves = generateAllCurrentLegalMoves();
@@ -55,7 +64,7 @@ public class Engine {
     public Move getMoveUsingMinMax(int depth) {
         MaxDepth = depth;
         PossitionEvaluated = 0;
-        int result = MinMax(depth, Integer.MIN_VALUE, Integer.MAX_VALUE, board.currentWhiteTurn);
+        int result = MinMax(depth, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, board.currentWhiteTurn);
         System.out.println("Positions evaluated: " + PossitionEvaluated);
         System.out.println("Best move evaluation: " + result);
         return BestMove;
@@ -71,19 +80,25 @@ public class Engine {
     }
 
 
-    public int MinMax(int depth,int alpha,int beta,boolean isMaximizingPlayer){
+    public int MinMax(int depth,int depthLevel,int alpha,int beta,boolean isMaximizingPlayer){  
         if(depth == 0 || board.CheckMate || board.StaleMate){
             PossitionEvaluated++; 
-            return evaluateBoard(isMaximizingPlayer, depth);
+            if(board.CheckMate){
+                return isMaximizingPlayer ? -(Checkmate-depthLevel ): (Checkmate - depthLevel); //depthLevel is added to find the fastest way to checkmate
+            }
+            if(board.StaleMate){
+                return 0;
+            }
+            return searchAllCaptureMoves(depthLevel,alpha,beta,isMaximizingPlayer);
         }
         List<Move> allCurrentLegalMoves = generateAllCurrentLegalMoves();
         if(isMaximizingPlayer){
             int maxEval = Integer.MIN_VALUE;
             for(Move move : allCurrentLegalMoves){
-                move.execute(board  );
+                board.movePiece(move);
                 //printBoard();
-                int eval = MinMax(depth - 1,alpha,beta,false);
-                move.undo(board);
+                int eval = MinMax(depth - 1,depthLevel+1,alpha,beta,false);
+                board.UndoMove();
                 if(depth == MaxDepth && eval > maxEval){ // Update the best move at the root level 
                     BestMove = move;                                              
                 }
@@ -97,10 +112,10 @@ public class Engine {
         }else{
             int minEval = Integer.MAX_VALUE;
             for(Move move : allCurrentLegalMoves){
-                move.execute(board);
+                board.movePiece(move);
                 //printBoard();
-                int eval = MinMax(depth - 1,alpha,beta,true);
-                move.undo(board);
+                int eval = MinMax(depth - 1,depthLevel+1,alpha,beta,true);
+                board.UndoMove();
                 if(depth == MaxDepth && eval < minEval){
                     BestMove = move;
                 }
@@ -114,15 +129,53 @@ public class Engine {
         }
     }
 
-    public int evaluateBoard(boolean isMaximizingPlayer, int depth){
-        int finalEvaluation = 0;
-        //printBoard();
+    public int searchAllCaptureMoves(int depthLevel,int alpha,int beta,boolean isMaximizingPlayer){
         if(board.CheckMate){
-            return isMaximizingPlayer ? -Checkmate *(depth-1): Checkmate *(depth-1);
+            PossitionEvaluated++; 
+            return isMaximizingPlayer ? -(Checkmate - depthLevel) : (Checkmate - depthLevel);
         }
         if(board.StaleMate){
+            PossitionEvaluated++;
             return 0;
         }
+        List<Move> allCurrentCaptureMoves = generateAllCaptureMoves();
+        if(allCurrentCaptureMoves.isEmpty()){
+            PossitionEvaluated++; 
+            return evaluateBoard(isMaximizingPlayer);
+        }
+        if(isMaximizingPlayer){
+            int maxEval = Integer.MIN_VALUE;
+            for(Move move : allCurrentCaptureMoves){
+                board.movePiece(move);
+                int eval = searchAllCaptureMoves(depthLevel+1,alpha,beta,false);
+                board.UndoMove();
+                maxEval = Math.max(maxEval, eval);
+                alpha = Math.max(alpha, eval);
+                if(beta <= alpha){
+                    break;
+                }
+            }
+            return maxEval;
+        }else{
+            int minEval = Integer.MAX_VALUE;
+            for(Move move : allCurrentCaptureMoves){
+                board.movePiece(move);
+                int eval = searchAllCaptureMoves(depthLevel+1,alpha,beta,true);
+                board.UndoMove();
+                minEval = Math.min(minEval, eval);
+                beta = Math.min(beta, eval);
+                if(beta <= alpha){
+                    break;
+                }
+            }
+            return minEval;
+        }
+    }
+
+    public int evaluateBoard(boolean isMaximizingPlayer){
+        int finalEvaluation = 0;
+        //printBoard();
+        
         finalEvaluation += countMaterial();
 
 
@@ -132,22 +185,12 @@ public class Engine {
 
     public int countMaterial(){
         int whiteMaterialValue = 0;
-        for(int row = 0; row < 8; row++){
-            for(int col = 0; col < 8; col++){
-                BoardSquare square = board.getSquare(row, col);
-                if(square.isOccupied() && square.getPiece().getColour() == PieceColour.WHITE){
-                    whiteMaterialValue += square.getPiece().getPieceValue();
-                }
-            }
+        for(BoardSquare square : board.locationOfWhitePieces){
+            whiteMaterialValue += square.getPiece().getPieceValue();
         }
         int blackMaterialValue = 0;
-        for(int row = 0; row < 8; row++){
-            for(int col = 0; col < 8; col++){
-                BoardSquare square = board.getSquare(row, col);
-                if(square.isOccupied() && square.getPiece().getColour() == PieceColour.BLACK){
-                    blackMaterialValue += square.getPiece().getPieceValue();
-                }
-            }
+        for(BoardSquare square : board.locationOfBlackPieces){
+            blackMaterialValue += square.getPiece().getPieceValue();
         }
 
 

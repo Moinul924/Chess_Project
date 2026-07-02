@@ -38,8 +38,8 @@ public class CastlingMove extends Move {
     public void execute(Board board) {
         performNormalMove(board);
         Piece RookPiece = RookStartSquare.getPiece();
-        RookStartSquare.removePiece();
-        RookEndSquare.addPiece(RookPiece);
+        RookStartSquare.removePiece(board);
+        RookEndSquare.addPiece(RookPiece, board);
         ((Rook)RookPiece).moveCount++;
         ((Rook)RookPiece).PieceMoved = true;
         board.moveHistory.add(this); 
@@ -49,8 +49,8 @@ public class CastlingMove extends Move {
     public void undo(Board board) {
         performNormalUndo(board);
         Piece RookPiece = RookEndSquare.getPiece();
-        RookEndSquare.removePiece();
-        RookStartSquare.addPiece(RookPiece);
+        RookEndSquare.removePiece(board);
+        RookStartSquare.addPiece(RookPiece, board);
         ((Rook)RookPiece).moveCount--;
         ((Rook)RookPiece).PieceMoved = false; 
     }

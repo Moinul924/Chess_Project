@@ -1,5 +1,5 @@
 package com.chess;
-import com.chess.chessPiece.Piece;
+import com.chess.chessPiece.*;
 
 public class BoardSquare {
 
@@ -24,11 +24,21 @@ public class BoardSquare {
         return piece != null;
     }
 
-    public void removePiece(){
+    public void removePiece(Board board){
+        if(piece.getColour() == PieceColour.WHITE){
+            board.locationOfWhitePieces.remove(this);
+        } else {
+            board.locationOfBlackPieces.remove(this);
+        }
         piece = null;
     }
-    public void addPiece(Piece piece){
+    public void addPiece(Piece piece,Board board){
         this.piece = piece;
+        if(piece.getColour() == PieceColour.WHITE){
+            board.locationOfWhitePieces.add(this);
+        } else {
+            board.locationOfBlackPieces.add(this);
+        }
     }
 
     public Piece getPiece() {
