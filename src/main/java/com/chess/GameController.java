@@ -176,7 +176,7 @@ public class GameController {
         //     return randomMove;
         // }
         // return null;
-        Move bestMove = engine.getMoveUsingMinMax(3); // You can adjust the depth as needed
+        Move bestMove = engine.getMoveUsingMinMax(4); // You can adjust the depth as needed
         if (bestMove != null) {
             gameBoard.movePiece(bestMove);
             return bestMove;

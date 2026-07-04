@@ -52,7 +52,9 @@ public class CastlingMove extends Move {
         RookEndSquare.removePiece(board);
         RookStartSquare.addPiece(RookPiece, board);
         ((Rook)RookPiece).moveCount--;
-        ((Rook)RookPiece).PieceMoved = false; 
+        if (((Rook)RookPiece).moveCount == 0) {
+            ((Rook)RookPiece).PieceMoved = false; 
+        }
     }
 
 

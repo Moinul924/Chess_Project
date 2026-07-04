@@ -15,6 +15,12 @@ public class Move {
         this.startSquare = start;
         this.endSquare = end;
         this.pieceMoved = piece;
+        if (endSquare.isOccupied()) {
+            this.pieceCaptured = endSquare.getPiece();
+        } else {
+            this.pieceCaptured = null;
+        }
+
     }
 
     public BoardSquare getEndSquare() {
@@ -79,7 +85,6 @@ public class Move {
     protected void performNormalMove(Board board) {
         startSquare.removePiece(board);
         if (endSquare.isOccupied()) {
-            pieceCaptured = endSquare.getPiece();
             endSquare.removePiece(board);
         }
         endSquare.addPiece(pieceMoved, board);

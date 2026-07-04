@@ -144,6 +144,7 @@ class ChessUI {
         if (targetSquareElement?.classList.contains('square')) {
             await this.processMoveAttempt(targetElement, targetSquareElement, startSquareElement);
             if (this.playEngine && !this.isGameOver && !this.isPromoting && this.moveMade) {
+                await this.sleep(500);
                 await this.handleEngineMove();
                 this.moveMade = false; // Reset after engine move
             }
@@ -175,6 +176,7 @@ class ChessUI {
         this.activePiece = startSquareElement.querySelector('.piece');
         const pieceName = this.activePiece.id.split('-')[0];
         const position = { row: endRow, col: endCol };
+        this.soundMade = false;
         await this.makeMove(targetElement, targetSquareElement, startSquareElement, pieceName, position);
         this.activePiece = null; // Clear the active piece so the human player can pick up pieces again
     }
@@ -515,6 +517,10 @@ class ChessUI {
         } else {
             this.boardElement.classList.remove('flipped');
         }
+    }
+
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 }
     

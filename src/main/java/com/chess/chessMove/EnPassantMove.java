@@ -6,7 +6,6 @@ import com.chess.chessPiece.*;;
 
 public class EnPassantMove extends Move {
     private BoardSquare capturedPawnSquare;
-    private Piece pieceCaptured;// will this cause a bug 
 
     public EnPassantMove(BoardSquare start, BoardSquare end, Piece piece, BoardSquare capturedPawnSquare) {
         super(start, end, piece);
@@ -32,7 +31,10 @@ public class EnPassantMove extends Move {
 
     @Override
     public void undo(Board board) {
-        performNormalUndo(board);
-        capturedPawnSquare.addPiece(this.pieceCaptured, board);
+        endSquare.removePiece(board);
+        startSquare.addPiece(pieceMoved, board);
+        capturedPawnSquare.addPiece(pieceCaptured, board); // Put the pawn back exactly where it was
+        UndoBoardStates(board);
+        board.currentWhiteTurn = !board.currentWhiteTurn;
     }
 }
