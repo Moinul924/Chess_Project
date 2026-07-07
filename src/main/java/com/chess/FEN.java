@@ -5,7 +5,7 @@ import com.chess.chessPiece.*;
 public class FEN {
 
     // Example: "RNBQKBNR/PPPPPPPP/8/8/8/8/pppppppp/rnbqkbnr I0"
-    public static String ChessFenString = "RNBQKBNR/PPPPPPPP/8/8/8/8/pppppppp/rnbqkbnr I0";
+    public static String ChessFenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR I0";
 
     private Piece createPieceFromChar(char c) {
         switch (c) {
@@ -105,8 +105,8 @@ public class FEN {
     }
 
     public void checkIfKingInStartingSquare(int row, int col, King piece) {
-        if (piece.getColour() == PieceColour.WHITE && row != 0 && col != 4
-         || piece.getColour() == PieceColour.BLACK && row != 7 && col != 4) {
+        if (piece.getColour() == PieceColour.WHITE && row != 7 && col != 4
+         || piece.getColour() == PieceColour.BLACK && row != 0 && col != 4) {
             piece.PieceMoved = true;
             piece.moveCount++;
         }

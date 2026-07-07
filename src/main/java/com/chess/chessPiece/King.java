@@ -114,7 +114,7 @@ public class King extends Piece {
         }
 
         // 3. Check Pawns
-        int pawnDirection = (getColour() == PieceColour.WHITE) ? 1 : -1;
+        int pawnDirection = (getColour() == PieceColour.WHITE) ? -1 : 1;
         int[][] pawnAttacks = {{pawnDirection, 1}, {pawnDirection, -1}};
         for (int[] offset : pawnAttacks) {
             int r = kRow + offset[0];
@@ -188,7 +188,7 @@ public class King extends Piece {
         }
 
         // 3. Pawns
-        int pawnDirection = (defendingColour == PieceColour.WHITE) ? 1 : -1;
+        int pawnDirection = (defendingColour == PieceColour.WHITE) ? -1 : 1;
         int[][] pawnAttacks = {{pawnDirection, 1}, {pawnDirection, -1}};
         for (int[] offset : pawnAttacks) {
             int r = targetRow + offset[0];

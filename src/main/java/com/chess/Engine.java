@@ -1,7 +1,8 @@
 package com.chess;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.io.InputStream;
 
 import com.chess.chessMove.*;
 import com.chess.chessPiece.*;
@@ -16,6 +17,8 @@ public class Engine {
     int HighestDepth = 0;
     int PossitionEvaluated = 0;
     int numOfsimilarepossition = 0;
+    boolean useOpeningMoves = true;
+    List<String> chessOpeningMoves;
 
     public int[][] Knight_PieceSquareTables_MG = {
         {-50,-40,-30,-30,-30,-30,-40,-50},
@@ -124,6 +127,194 @@ public class Engine {
         this.board = board;
     }
 
+
+   private Move findDynamicOpeningMove() {
+        try {
+            try (InputStream is = getClass().getResourceAsStream("/static/chessOpenings.txt")) {
+                if (is == null) {
+                    System.err.println("Error: chessOpenings.txt not found in resources/static folder.");
+                    return null;
+                }
+
+                List<String> lines = new java.io.BufferedReader(new java.io.InputStreamReader(is))
+                                        .lines()
+                                        .collect(java.util.stream.Collectors.toList());
+
+                // 1. Reconstruct the entire game history played so far into a SAN string sequence
+                List<String> playedHistorySAN = new ArrayList<>();
+                
+                // To safely convert moves to SAN without ruining the board state,
+                // we simulate undoing and replaying, or use a clean pass.
+                // Since convertMoveToSAN depends on board state, let's temporarily undo 
+                // moves to accurately capture what the SAN was at that exact moment.
+                int historySize = board.moveHistory.size();
+                List<Move> temporaryHistory = new ArrayList<>(board.moveHistory);
+                
+                // Roll back the board entirely to build the correct SAN strings chronologically
+                for (int i = 0; i < historySize; i++) {
+                    board.UndoMove();
+                }
+                
+                // Replay them and grab their true SAN notation
+                for (Move move : temporaryHistory) {
+                    String san = convertMoveToSAN(move);
+                    playedHistorySAN.add(san);
+                    board.movePiece(move); // re-execute to advance state
+                }
+
+                // 2. Build the prefix string we are looking for (e.g., "e4 e5 Nf3")
+                String historyPrefix = String.join(" ", playedHistorySAN);
+
+                // 3. Filter all opening lines that match our current history prefix
+                List<String> matchingLines = new ArrayList<>();
+                for (String line : lines) {
+                    line = line.trim();
+                    if (historyPrefix.isEmpty()) {
+                        // At move 0, all lines are valid options
+                        matchingLines.add(line);
+                    } else if (line.startsWith(historyPrefix + " ")) {
+                        // Matches history and has moves remaining
+                        matchingLines.add(line);
+                    }
+                }
+
+                // 4. If we found matching paths, pick one at random and extract the next move
+                if (!matchingLines.isEmpty()) {
+                    Random random = new Random();
+                    String chosenLine = matchingLines.get(random.nextInt(matchingLines.size()));
+                    
+                    // Split the chosen line into individual moves
+                    String[] lineMoves = chosenLine.split(" ");
+                    int nextMoveIndex = playedHistorySAN.size();
+                    
+                    if (nextMoveIndex < lineMoves.length) {
+                        String nextMoveSAN = lineMoves[nextMoveIndex];
+                        Move openingMove = convertSANToMove(nextMoveSAN);
+                        
+                        if (openingMove != null) {
+                            System.out.println("Playing Dynamic Opening Move: " + nextMoveSAN + " (Matches " + matchingLines.size() + " book lines)");
+                            return openingMove;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return null; 
+    }
+
+
+    public String convertMoveToSAN(Move move) { 
+        Piece piece = move.getPiece();
+        BoardSquare startSquare = move.getStartSquare();
+        BoardSquare endSquare = move.getEndSquare();
+        
+        String startAlgebraic = convertRowColToAlgebraic(startSquare.getRow(), startSquare.getCol());
+        String endAlgebraic = convertRowColToAlgebraic(endSquare.getRow(), endSquare.getCol());
+        if (move instanceof CastlingMove) {
+            return (endSquare.getCol() == 6) ? "O-O" : "O-O-O";
+        }
+
+        if (piece instanceof Pawn) {
+            String sanMove = "";
+            if (move.isCaptureMove()) {
+                sanMove += startAlgebraic.charAt(0) + "x";
+            }
+            sanMove += endAlgebraic;
+            
+            if (move instanceof PawnPromotionMove) {
+                sanMove += "=" + ((PawnPromotionMove) move).getPromotedPiece().getName().charAt(0);
+            }
+            return sanMove;
+        }
+
+        String sanMove = "";
+        
+        char pieceLetter = piece.getName().equals("Knight") ? 'N' : piece.getName().charAt(0);
+        sanMove += pieceLetter;
+
+        if (!(piece instanceof King) && isMoveAmbiguous(move)) {
+            sanMove += startAlgebraic.charAt(0);
+        }
+
+        if (move.isCaptureMove()) {
+            sanMove += "x";
+        }
+
+        sanMove += endAlgebraic;
+
+        if (board.CheckMate){
+            sanMove += "#";
+        } else if (board.KingInCheck){
+            sanMove += "+";
+        }
+        return sanMove;
+    }
+
+    public Move convertSANToMove(String san){
+        List<Move> allCurrentLegalMoves = generateAllCurrentLegalMoves();
+        for(Move move : allCurrentLegalMoves){
+            String moveSAN = convertMoveToSAN(move);
+            if(moveSAN.equals(san)){
+                return move;
+            }
+        }
+        return null;
+    }
+
+
+    public boolean isMoveAmbiguous(Move move) {
+        Piece movingPiece = move.getPiece();
+    
+        if (movingPiece.getName().equals("Pawn") || movingPiece.getName().equals("King")) {
+            return false;
+        }
+
+        boolean isAmbiguous = false;
+        BoardSquare endSquare = move.getEndSquare();
+
+        List<BoardSquare> allySquares = (movingPiece.getColour() == PieceColour.WHITE) 
+                ? board.locationOfWhitePieces 
+                : board.locationOfBlackPieces;
+
+        for (BoardSquare square : allySquares) {
+            if (square == move.getStartSquare()) {
+                continue;
+            }
+
+            Piece otherPiece = square.getPiece();
+
+            if (otherPiece.getName().equals(movingPiece.getName())) {
+
+                List<Move> legalMoves = otherPiece.getLegalMoves(square, board, true);
+
+                for (Move alternateMove : legalMoves) {
+                    if (alternateMove.getEndSquare() == endSquare) {
+                        isAmbiguous = true;
+                        break; 
+                    }
+                }
+            }
+            if (isAmbiguous) break;
+        }
+
+        return isAmbiguous;
+        
+    }
+    
+
+    public String convertRowColToAlgebraic(int row, int col) {
+        char file = (char) ('a' + col);
+        int rank = 8 - row;
+        return "" + file + rank;
+    }
+
+    
+
+
+
     public List<Move> generateAllCurrentLegalMoves() {
         List<Move> allCurrentLegalMoves = new ArrayList<>();
         if(board.currentWhiteTurn){
@@ -149,7 +340,10 @@ public class Engine {
     }
 
 
-
+    
+    
+    
+    
     public Move getRandomMove() {
         List<Move> allCurrentLegalMoves = generateAllCurrentLegalMoves();
         for(Move move : allCurrentLegalMoves) {
@@ -162,6 +356,21 @@ public class Engine {
             return allCurrentLegalMoves.get(randomIndex);
         }
         return null; // No legal moves available
+    }
+    
+    public Move getBestMove(int depth) {
+
+        if (useOpeningMoves) {
+            Move openingMove = findDynamicOpeningMove();
+            if (openingMove != null) {
+                return openingMove;
+            } else {
+                // No matching openings found for this position, turn off book search
+                useOpeningMoves = false;
+            }
+        }
+        
+        return getMoveUsingMinMax(depth);
     }
 
     public Move getMoveUsingMinMax(int depth) {
@@ -379,7 +588,7 @@ public class Engine {
     public int getValueForPieceSquareTable(BoardSquare square,Piece piece,double endgameEval){
         int row = square.getRow();
         int col = square.getCol();
-        if(piece.getColour() == PieceColour.WHITE){
+        if(piece.getColour() == PieceColour.BLACK){
             row = 7 - row;
             col = 7 - col;
         }

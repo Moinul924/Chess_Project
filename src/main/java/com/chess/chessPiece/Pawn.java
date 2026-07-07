@@ -11,8 +11,8 @@ import com.chess.chessMove.*;
 public class Pawn extends Piece {
 
     
-    protected int[][] whiteOffsets = { {1,0}, {2,0}, {1,1}, {1,-1} };
-    protected int[][] blackOffsets = { {-1,0}, {-2,0}, {-1,1}, {-1,-1} };
+    protected int[][] whiteOffsets = {{-1,0}, {-2,0}, {-1,1}, {-1,-1}};
+    protected int[][] blackOffsets = {{1,0}, {2,0}, {1,1}, {1,-1}  };
 
     public Pawn(PieceColour PawnColour) {
         super(PawnColour, "Pawn");
@@ -25,8 +25,8 @@ public class Pawn extends Piece {
             return false;
         }
         
-        int direction = (getColour() == PieceColour.WHITE) ? 1 : -1;
-        int PawnstartRow = (getColour() == PieceColour.WHITE) ? 1 : 6;
+        int direction = (getColour() == PieceColour.WHITE) ? -1 : 1;
+        int PawnstartRow = (getColour() == PieceColour.WHITE) ? 6 : 1;
 
         int deltaRow = endRow - startRow; 
         int deltaCol = Math.abs(endCol - startCol); 
@@ -58,7 +58,7 @@ public class Pawn extends Piece {
             return new PairOfData<>(false, null);
         }
         
-        int direction = (getColour() == PieceColour.WHITE) ? 1 : -1;
+        int direction = (getColour() == PieceColour.WHITE) ? -1 : 1;
         Move lastMove = board.moveHistory.getLast();
         if(lastMove.getPiece().getName().equals("Pawn")){
             int lastStartRow = lastMove.getStartSquare().getRow();

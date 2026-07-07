@@ -5,6 +5,7 @@ class ChessUI {
         this.gameOverOverlay = document.getElementById('game-over-overlay');
         this.gameOverTitle = document.getElementById('game-over-title');
         this.gameOverDetail = document.getElementById('game-over-detail');
+        this.gameModeLabel = document.getElementById('game-mode-label');
         this.undoButton = document.getElementById('undo-button');
         this.engineButton = document.getElementById('play-engine-button');
         this.fenInput = document.getElementById('fen-input');
@@ -29,6 +30,8 @@ class ChessUI {
         this.undoButton.addEventListener('click', () => this.handleUndo());
         this.engineButton.addEventListener('click', () => this.handlePlayEngine());
         this.flipButton.addEventListener('click', () => this.toggleFlip());
+        this.setGameModeLabel('1 v 1');
+        
     }
 
     // ==========================================
@@ -467,6 +470,13 @@ class ChessUI {
 
     async handlePlayEngine() {
         this.playEngine = true;
+        this.setGameModeLabel('playing agent bot');
+    }
+
+    setGameModeLabel(text) {
+        if (this.gameModeLabel) {
+            this.gameModeLabel.textContent = text;
+        }
     }
 
     async handleLoadFen() {

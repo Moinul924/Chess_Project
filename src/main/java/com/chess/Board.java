@@ -14,8 +14,8 @@ public class Board {
     public List<BoardSquare> squaresToBlockCheck = new ArrayList<>(); 
     public List<BoardSquare> locationOfWhitePieces = new ArrayList<>();
     public List<BoardSquare> locationOfBlackPieces = new ArrayList<>();
-    public int[] WhiteKingSquareLocation = {0, 4};
-    public int[] BlackKingSquareLocation = {7, 4};
+    public int[] WhiteKingSquareLocation = {7, 4};
+    public int[] BlackKingSquareLocation = {0, 4};
     public List<Move> currentPieceLegalMoves = null;
     public List<Move> moveHistory = new ArrayList<>();
     public boolean CheckMate = false;
