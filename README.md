@@ -35,3 +35,9 @@ Before you begin, ensure you have met the following requirements:
 
  4. Open your preferred web browser and navigate to:
       http://localhost:1000/
+
+
+## Acknowledgments
+
+A special thank you to [Sebastian Lague](https://www.youtube.com/c/SebastianLague) for the inspiration for this project. This work was made possible by his amazing "Chess Coding Adventures" video series, which helped me grasp the mechanics of the minimax algorithm, alpha-beta pruning, and how to improve the evaluation function.
+    
