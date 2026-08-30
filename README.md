@@ -2,13 +2,36 @@
 
 ## A chess engine built in Java and Spring Boot with opening book theory, capable of playing chess at an intermediate level.
 
-This project is a chess engine that uses the min-max algorithm and alpha-beta pruning to allow the engine to look at future moves. The project can calculate legal moves for each piece and use min-max to see all the permutations of future moves that can be played after a specific move.
+![Screenshot of the chess Board](./screenshot/ChessBoardImage.png)
+
+This project is a chess engine that uses the minimax algorithm and alpha-beta pruning to evaluate future moves. The project can calculate legal moves for each piece and use minimax to explore all permutations of future moves that can be played after a specific move. This project has many other  features.
+
+* **FEN STRING** Load standard FEN (Forsyth-Edwards Notation) string which will set up a specific board state.
+* **UNDO BUTTON** A move can be undone and played from the previous position
+*  **FLIP BOARD** The board can be flipped when you are playing with a human 
+
+
+
+# Prerequisites
+
+Before you begin, ensure you have met the following requirements:
+* **Java 17** installed.
+* Your preferred IDE (VS Code, IntelliJ IDEA, or Eclipse).
 
 
 ## How to run the project
 
-1. Clone this project.
-2. Open the project in VS Code or any other preferred IDE
-3. navigate to C:\My projects\Chess_Project\src\main\java\com\chess and run the ChessProjectApplication.java file
-4. Open your preferred browser and search http://localhost:1000/
-   
+1. Clone this repository to your local machine:
+   ```bash
+   git clone [https://github.com/Moinul924/Chess_Project.git](https://github.com/Moinul924/Chess_Project.git)
+2. Navigate to project directory:
+   ```bash
+   cd Chess_Project
+3. Run the Spring Boot application
+   ``` bash
+   mvn spring-boot:run
+   ```
+   Or you can open the project in your IDE and run the **ChessProjectApplication.java** file.
+
+ 4. Open your preferred web browser and navigate to:
+      http://localhost:1000/
