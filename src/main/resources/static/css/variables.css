@@ -1,0 +1,37 @@
+/* Central theme tokens. Every color/size a theme or settings UI would
+   want to change lives here as a custom property; every other
+   stylesheet references the variable instead of a literal value.
+   A board color picker just needs to call, e.g.:
+   document.documentElement.style.setProperty('--color-square-dark', value) */
+
+:root {
+    /* Board */
+    --square-size: 80px;
+    --color-square-light: #F5F5F4;
+    --color-square-dark: #6A9B41;
+    --color-square-selected: rgba(249, 249, 148, 0.8);
+    --color-square-last-move: rgba(181, 205, 58, 0.8);
+    --color-move-indicator: rgba(0, 0, 0, 0.2);
+
+    /* Accent (brand purple) */
+    --color-accent: rgb(105, 16, 146);
+    --color-accent-border: rgb(135, 36, 186);
+    --color-accent-hover: rgb(125, 26, 166);
+    --color-accent-glow: rgba(135, 36, 186, 0.6);
+
+    /* Panels & surfaces */
+    --color-page-bg: #2c2c2c;
+    --color-panel-bg: rgba(32, 32, 40, 0.96);
+    --color-panel-bg-alt: rgba(60, 60, 72, 0.96);
+    --color-panel-bg-hover: rgba(80, 80, 92, 0.96);
+    --color-border-subtle: rgba(255, 255, 255, 0.18);
+    --color-overlay-bg: rgba(10, 10, 10, 0.72);
+
+    /* Text */
+    --color-text: #fff;
+
+    /* Shadows */
+    --shadow-sm: 0 8px 16px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 12px 20px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.45);
+}

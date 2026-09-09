@@ -83,11 +83,11 @@ public class Move {
     
 
     protected void performNormalMove(Board board) {
-        startSquare.removePiece(board);
+        board.removePiece(startSquare);
         if (endSquare.isOccupied()) {
-            endSquare.removePiece(board);
+            board.removePiece(endSquare);
         }
-        endSquare.addPiece(pieceMoved, board);
+        board.addPiece(pieceMoved, endSquare);
         SetKingAndRookPieceMovedToTrue();
         board.UpdateKingSquareLocation(endSquare, pieceMoved);
         if(pieceMoved.getName().equals("Pawn") && (endSquare.getRow() == 0 || endSquare.getRow() == 7)){ 
@@ -103,10 +103,10 @@ public class Move {
     }
 
     public void performNormalUndo(Board board) {
-        endSquare.removePiece(board);
-        startSquare.addPiece(pieceMoved, board);
+        board.removePiece(endSquare);
+        board.addPiece(pieceMoved, startSquare);
         if (pieceCaptured != null) {
-            endSquare.addPiece(pieceCaptured, board);
+            board.addPiece(pieceCaptured, endSquare);
         }
         UndoBoardStates(board);
         board.currentWhiteTurn = !board.currentWhiteTurn;

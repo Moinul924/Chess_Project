@@ -25,15 +25,15 @@ public class EnPassantMove extends Move {
     public void execute(Board board) {
         performNormalMove(board);
         pieceCaptured = capturedPawnSquare.getPiece();
-        capturedPawnSquare.removePiece(board);
+        board.removePiece(capturedPawnSquare);
         board.moveHistory.add(this);
     }
 
     @Override
     public void undo(Board board) {
-        endSquare.removePiece(board);
-        startSquare.addPiece(pieceMoved, board);
-        capturedPawnSquare.addPiece(pieceCaptured, board); // Put the pawn back exactly where it was
+        board.removePiece(endSquare);
+        board.addPiece(pieceMoved, startSquare);
+        board.addPiece(pieceCaptured, capturedPawnSquare); // Put the pawn back exactly where it was
         UndoBoardStates(board);
         board.currentWhiteTurn = !board.currentWhiteTurn;
     }

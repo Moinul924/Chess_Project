@@ -2,13 +2,15 @@ package com.chess;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import com.chess.chessMove.Move;
 import com.chess.chessPiece.*;
 
 public class Board {
     private BoardSquare[][] board;
-    public boolean currentWhiteTurn = true;
+    public static final Random ZOBRIST_RANDOM = new Random(0x5EEDC0DEL);
+    public boolean currentWhiteTurn;
     public boolean KingInCheck = false;
     public List<Piece> currentlyPinnedPieces = new ArrayList<>();
     public List<BoardSquare> squaresToBlockCheck = new ArrayList<>(); 
@@ -23,11 +25,31 @@ public class Board {
 
     Board(){
         this.board = new BoardSquare[8][8];
-        for(int i = 0; i < 8; i++){
-            for(int j = 0; j < 8; j++){
-                board[i][j] = new BoardSquare(i, j);
+        for(int row = 0; row < 8; row++){
+            for(int col = 0; col < 8; col++){
+                board[row][col] = new BoardSquare(row, col);
             }
         }
+    }
+
+    public void resetBoard(){
+        for(int row = 0; row < 8; row++){
+            for(int col = 0; col < 8; col++){
+                if(board[row][col].isOccupied()){
+                    removePiece(board[row][col]);
+                }
+            }
+        }
+        locationOfWhitePieces.clear();
+        locationOfBlackPieces.clear();
+        moveHistory.clear();
+        currentlyPinnedPieces.clear();
+        squaresToBlockCheck.clear();
+        currentPieceLegalMoves = null;
+        CheckMate = false;
+        StaleMate = false;
+        KingInCheck = false;
+        initialisePieces();
     }
 
     public void initialisePieces(){
@@ -59,9 +81,9 @@ public class Board {
     }
 
     public boolean CanAnyPieceMove(boolean WhiteTurn){
-        for(int i = 0; i < 8; i++){
-            for(int j = 0; j < 8; j++){
-                BoardSquare square = getSquare(i, j);
+        for(int row = 0; row < 8; row++){
+            for(int col = 0; col < 8; col++){
+                BoardSquare square = getSquare(row, col);
                 if(square.isOccupied()){
                     Piece piece = square.getPiece();
                     if(piece.getColour() == (WhiteTurn ? PieceColour.WHITE : PieceColour.BLACK)){
@@ -76,7 +98,26 @@ public class Board {
     }
 
     public void addPieceToSquare(Piece piece,int row, int col){
-        getSquare(row, col).addPiece(piece, this);
+        addPiece(piece, getSquare(row, col));
+    }
+
+    public void addPiece(Piece piece, BoardSquare square){
+        square.setPiece(piece);
+        if(piece.getColour() == PieceColour.WHITE){
+            locationOfWhitePieces.add(square);
+        } else {
+            locationOfBlackPieces.add(square);
+        }
+    }
+
+    public void removePiece(BoardSquare square){
+        Piece piece = square.getPiece();
+        if(piece.getColour() == PieceColour.WHITE){
+            locationOfWhitePieces.remove(square);
+        } else {
+            locationOfBlackPieces.remove(square);
+        }
+        square.setPiece(null);
     }
 
 
@@ -139,6 +180,21 @@ public class Board {
                 BlackKingSquareLocation[1] = targetSquare.getCol();
             }
         }
+    }
+
+    public long getZobristHash(){
+        long boardHash= 0L;
+        for(int row = 0; row < 8; row++){
+            for(int col = 0; col < 8; col++){
+                BoardSquare square = getSquare(row, col);
+                if(square.isOccupied()){
+                    Piece piece = square.getPiece();
+                    boardHash ^= square.getZobristNumber(piece);
+                }
+            }
+        }
+
+        return boardHash;
     }
 
     

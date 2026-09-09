@@ -1,7 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="./css/variables.css">
+    <link rel="stylesheet" href="./css/layout.css">
     <link rel="stylesheet" href="./css/board.css">
+    <link rel="stylesheet" href="./css/controls.css">
+    <link rel="stylesheet" href="./css/overlay.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chess Game</title>
@@ -39,9 +43,10 @@
         <div class="game-over-card">
             <h2 id="game-over-title">Game Over</h2>
             <p id="game-over-detail"></p>
+            <button id="play-again-button" class="btn btn-primary">Play Again</button>
         </div>
     </div>
 
 </body>
-<script src="./js/board.js"></script>
+<script type="module" src="./js/board.js"></script>
 </html>

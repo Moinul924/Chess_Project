@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.io.InputStream;
+import java.util.HashMap;
 
 import com.chess.chessMove.*;
 import com.chess.chessPiece.*;
@@ -19,6 +20,8 @@ public class Engine {
     int numOfsimilarepossition = 0;
     boolean useOpeningMoves = true;
     List<String> chessOpeningMoves;
+    private HashMap<Long, Integer> transpositionTable = new HashMap<>();
+    int numberOfTimesTranspositionTableUsed = 0;
 
     public int[][] Knight_PieceSquareTables_MG = {
         {-50,-40,-30,-30,-30,-30,-40,-50},
@@ -360,6 +363,10 @@ public class Engine {
     
     public Move getBestMove(int depth) {
 
+        if(board.moveHistory.size() < 2){ // when a new game start this is the way to reset the useOpeningMoves flag to true so that the engine can use opening moves again
+            useOpeningMoves = true;
+        }
+
         if (useOpeningMoves) {
             Move openingMove = findDynamicOpeningMove();
             if (openingMove != null) {
@@ -451,7 +458,7 @@ public class Engine {
             return 0;
         }
         List<Move> allCurrentCaptureMoves = generateAllCaptureMoves();
-        if(allCurrentCaptureMoves.isEmpty() || depthLevel  == MaxDepth){
+        if(allCurrentCaptureMoves.isEmpty() || depthLevel >= MaxDepth){
             PossitionEvaluated++; 
             return evaluateBoard(isMaximizingPlayer);
         }
@@ -486,6 +493,14 @@ public class Engine {
 
     public int evaluateBoard(boolean isMaximizingPlayer){
         int finalEvaluation = 0;
+
+        long zobristHash = board.getZobristHash();
+        if(transpositionTable.containsKey(zobristHash)){
+            finalEvaluation = transpositionTable.get(zobristHash);
+            System.out.println("Number of times transposition table used: " + ++numberOfTimesTranspositionTableUsed);
+            return finalEvaluation;
+        }
+
         //printBoard();
         double endgameWeighting = getEndgameWeighting();
 
@@ -505,6 +520,7 @@ public class Engine {
         finalEvaluation += getPieceSquareEvals(endgameWeighting);
 
 
+        transpositionTable.put(zobristHash, finalEvaluation);
         return finalEvaluation;
     }
 

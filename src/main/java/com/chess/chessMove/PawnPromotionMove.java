@@ -31,13 +31,13 @@ public class PawnPromotionMove extends Move {
 
     @Override
     public void execute(Board board) {
-        if(startSquare.isOccupied()){   // we require this check because in some cases, the startSquare might be empty due to the logic used for the player to promote the pawn. 
-            startSquare.removePiece(board);
+        if(startSquare.isOccupied()){   // we require this check because in some cases, the startSquare might be empty due to the logic used for the player to promote the pawn.
+            board.removePiece(startSquare);
         }
         if (endSquare.isOccupied()) {
-            endSquare.removePiece(board);
+            board.removePiece(endSquare);
         }
-        endSquare.addPiece(promotedPiece, board);
+        board.addPiece(promotedPiece, endSquare);
         RemovePriveousMoveFromMoveHistory(board);
         board.moveHistory.add(this);
         board.currentWhiteTurn = !board.currentWhiteTurn;

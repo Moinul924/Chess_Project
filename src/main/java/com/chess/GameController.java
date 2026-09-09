@@ -1,6 +1,8 @@
 package com.chess;
 
 import java.util.List;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,12 +42,18 @@ public class GameController {
         return gameBoard; 
     }
 
+    @GetMapping ("/reset")
+    public boolean resetGame() {
+        gameBoard.resetBoard();
+        return true;
+    }
+
 
     @PostMapping("/click")
     public List<Move> handlePieceClick(@RequestParam int row, @RequestParam int col, @RequestParam String name) {
-        System.out.println("--- NEW CLICK RECEIVED FROM BROWSER ---");
-        System.out.println("Piece: " + name);
-        System.out.println("Coordinates: Row " + row + ", Col " + col); 
+        // System.out.println("--- NEW CLICK RECEIVED FROM BROWSER ---");
+        // System.out.println("Piece: " + name);
+        // System.out.println("Coordinates: Row " + row + ", Col " + col); 
         BoardSquare clickedSquare = gameBoard.getSquare(row, col);
         selectedSquare = clickedSquare;
 
@@ -55,9 +63,9 @@ public class GameController {
 
     @PostMapping("/moved")
     public boolean handleCheckPieceMove(@RequestParam int row, @RequestParam int col, @RequestParam String name) {
-        System.out.println("--- PIECE MOVED ---");
-        System.out.println("Piece: " + name);
-        System.out.println("New Coordinates: Row " + row + ", Col " + col); 
+        // System.out.println("--- PIECE MOVED ---");
+        // System.out.println("Piece: " + name);
+        // System.out.println("New Coordinates: Row " + row + ", Col " + col); 
         targetSquare = gameBoard.getSquare(row, col);
 
 
@@ -75,10 +83,31 @@ public class GameController {
         return false;
     }
 
+    public void storeTranspositionTable() {
+        BoardSquare[][] board = gameBoard.getBoard();
+        try(FileOutputStream outputStream = new FileOutputStream("src/main/resources/static/transpositionTableRecords.txt", true)) {
+            for(int row = 0; row < 8; row++) {
+                for(int col = 0; col < 8; col++) {
+                    BoardSquare square = board[row][col];
+                    long[][] zobristNumbers = square.getZobristNumbers();
+                    for(int colour = 0; colour < 2; colour++) {
+                        for(int pieceType = 0; pieceType < 6; pieceType++) {
+                            outputStream.write((zobristNumbers[colour][pieceType] + "\n").getBytes());
+                        }
+                    }
+                    outputStream.write("\n".getBytes());
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error writing transposition table: " + e.getMessage());
+        }
+        
+    }
+
 
     @GetMapping("/castle")
     public Move IsLastMoveCastlingMove() {
-        System.out.println("--- CASTLING MOVE CHECK ---");
+        // System.out.println("--- CASTLING MOVE CHECK ---");
 
         if (gameBoard.moveHistory.isEmpty()) {
             return null;
@@ -97,7 +126,7 @@ public class GameController {
     @GetMapping("/promotion")
     public Move IsLastMovePawnPromotion(){
 
-        System.out.println("--- PAWN PROMOTION MOVE CHECK ---");
+        // System.out.println("--- PAWN PROMOTION MOVE CHECK ---");
 
         if (gameBoard.moveHistory.isEmpty()) {
             return null;
@@ -115,7 +144,7 @@ public class GameController {
 
     @GetMapping("/EnPassant")
     public Move IsLastMoveEnPassant(){
-        System.out.println("--- EnPassant MOVE CHECK ---");
+        // System.out.println("--- EnPassant MOVE CHECK ---");
 
         if (gameBoard.moveHistory.isEmpty()) {
             return null;
@@ -157,7 +186,7 @@ public class GameController {
 
     @PostMapping("/undo")
     public Move handleUndoMove() {
-        System.out.println("--- UNDO MOVE ---");
+        // System.out.println("--- UNDO MOVE ---");
         if (gameBoard.moveHistory.isEmpty()) {
             return null;
         }
@@ -168,7 +197,7 @@ public class GameController {
 
     @PostMapping("/EngineMove")
     public Move handleEngineMove() {    
-        System.out.println("--- ENGINE MOVE ---");
+        // System.out.println("--- ENGINE MOVE ---");
         
         // Move randomMove = engine.getRandomMove();
         // if (randomMove != null) {
@@ -188,7 +217,7 @@ public class GameController {
 
     @PostMapping("/load-fen")
     public boolean loadFenString(@RequestParam String fen) {
-        System.out.println("--- LOADING NEW FEN ---");
+        // System.out.println("--- LOADING NEW FEN ---");
         try {
             Board newBoard = new Board();
             
