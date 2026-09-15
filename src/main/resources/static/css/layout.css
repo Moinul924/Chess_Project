@@ -6,7 +6,7 @@ body {
     flex-direction: column;
     align-items: center;
     font-family: sans-serif;
-    background-color: var(--color-page-bg);
+    background: var(--color-page-bg);
 }
 
 h1 {
@@ -19,18 +19,100 @@ h1 {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 60px;
+    gap: 100px;
     width: 100%;
+    min-height: calc(100vh - 110px);
     max-width: 1200px;
+}
+
+.game-mode {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 100px;
+    min-height: calc(100vh - 110px);
+    width: 100%;
+    font-family: "Ubuntu Mono", monospace;
+}
+
+.game-mode.is-hidden {
+    display: none;
+}
+
+.game-board-screen {
+    display: none;
+}
+
+.game-board-screen.is-visible {
+    display: flex;
+}
+
+.profile {
+    display: flex;
+    align-self: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.player-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.profile-name {
+    font-family: "Ubuntu Mono", monospace;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.profile-avatar{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    background: #ddcfcf;
+    color: black;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border-radius: 20%;
+}
+
+.clock{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 90px;
+    padding: 8px 12px;
+    border: 2px solid var(--color-border-subtle);
+    border-radius: 4px;
+    background: var(--color-panel-bg-alt);
+    color: var(--color-text);
+    font-family: "Ubuntu Mono", monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+.profile-rating {
+    font-family: "Ubuntu Mono", monospace;
+    font-size: 1.5rem;
+    color: var(--color-text);
+}
+
+.board-only .left-panel {
+    display: none;
 }
 
 .left-panel {
     display: flex;
     flex-direction: column;
-    gap: 30px;
-    align-items: flex-start;
+    align-items: center;
+    gap: 16px;
 }
-
 .right-panel {
     display: flex;
     flex-direction: column;
@@ -38,15 +120,127 @@ h1 {
     gap: 16px;
 }
 
-.game-mode-label {
-    padding: 10px 18px;
-    border-radius: 999px;
-    border: 1px solid var(--color-border-subtle);
-    background: var(--color-panel-bg);
-    color: var(--color-text);
-    font-size: 0.95rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    box-shadow: var(--shadow-sm);
+
+
+.navbar {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--color-navbar);
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 10px;
+    padding: 25px 32px;
+    gap: 24px;
 }
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--color-text);
+    font-family: "Matemasie", cursive;
+    font-weight: 700;
+    font-size: 1.4rem;
+    letter-spacing: 0.02em;
+}
+
+.navbar-brand-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+
+.navbar-links {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 32px;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 150px;
+    list-style: none;
+    margin: 0;
+    padding: 12px;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 8px;
+    background: var(--color-navbar);
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(120%);
+    visibility: hidden;
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+}
+
+.navbar-menu-button {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.18);
+    color: var(--color-text);
+    cursor: pointer;
+    margin-left: auto;
+}
+
+.navbar-menu-button span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+}
+
+.navbar-menu-button:hover {
+    background: rgba(0, 0, 0, 0.32);
+}
+
+.navbar-links.is-open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+    visibility: visible;
+}
+
+.navbar-link {
+    color: var(--color-navbar-link);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.2rem;
+    font-family: "Ubuntu Mono", monospace;
+    padding: 6px 2px;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease, font-size 0.2s ease;
+}
+
+.navbar-link:hover {
+    color: var(--color-navbar-link);
+    font-size: 1.4rem;
+}
+
+.navbar-link.active {
+    color: var(--color-text);
+}
+
+.navbar-profile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 36px;
+    flex-shrink: 0;
+    border: 2px solid transparent;
+    background: var(--color-navbar);
+    color: var(--color-text);
+    cursor: pointer;
+   
+}
+

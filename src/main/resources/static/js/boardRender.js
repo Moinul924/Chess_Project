@@ -1,6 +1,3 @@
-// Pure DOM rendering for the board. Every function here takes plain
-// arguments and reads/writes only the DOM - no game state, no fetch calls.
-
 export function createGrid(boardElement) {
     for (let i = 0; i < 64; i++) {
         const square = document.createElement('div');
@@ -55,9 +52,6 @@ export function renderLegalMoveIndicators(legalMoves) {
     });
 }
 
-// Builds the promotion picker and wires its clicks. onSelect(option) is
-// called (with the DOM already swapped to the chosen piece) once the user
-// picks - the caller decides what happens next (API call, sounds, engine turn).
 export function showPromotionMenu(pieceName, targetSquareElement, row, onSelect) {
     const colorLetter = pieceName[0];
     const folderColor = colorLetter === 'W' ? 'White' : 'Black';
@@ -124,6 +118,7 @@ export function showGameOverMessage({ overlay, title, detail }, message) {
         title.textContent = 'Game Over';
         detail.textContent = message;
         overlay.classList.add('visible');
+
     }
 }
 

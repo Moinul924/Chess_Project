@@ -1,6 +1,8 @@
 package com.chess;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -23,68 +25,87 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/api")
 public class GameController {
 
-    private Board gameBoard = new Board(); 
-    private Engine engine = new Engine(gameBoard);
-    private BoardSquare selectedSquare = null;
-    private BoardSquare targetSquare = null;
-    
+    private final Map<String, GameSession> games = new ConcurrentHashMap<>();
 
-
-    public GameController() {
-        gameBoard.initialisePieces(); 
+    private GameSession getGame(String gameId) {
+        if (gameId == null || gameId.isBlank()) {
+            throw new IllegalArgumentException("gameId is required");
+        }
+        return games.computeIfAbsent(gameId, ignored -> new GameSession());
     }
 
     // When your JavaScript asks for "/api/board", Spring Boot intercepts it here
+    @PostMapping ("/start-new-game")
+    public boolean startNewGame(@RequestParam String gameId){
+        getGame(gameId).startNewGame();
+        return true;
+    }
+
+    @PostMapping("/close-game")
+    public void closeGame(@RequestParam String gameId) {
+        games.remove(gameId);
+        System.out.println("Game with ID " + gameId + " has been closed.");
+        System.out.println("Current number of games: " + games.size());
+    }
+
     @GetMapping("/board")
-    public Board getBoardState() {
+    public Board getBoardState(@RequestParam String gameId) {
         // Spring Boot is so smart that when you return a Java object here,
         // it automatically translates it into JSON for your JavaScript to read!
-        return gameBoard; 
+        return getGame(gameId).gameBoard; 
+    }
+
+    @GetMapping("/current-turn")
+    public boolean getCurrentTurn(@RequestParam String gameId) {
+        return getGame(gameId).gameBoard.currentWhiteTurn;
     }
 
     @GetMapping ("/reset")
-    public boolean resetGame() {
-        gameBoard.resetBoard();
+    public boolean resetGame(@RequestParam String gameId) {
+        getGame(gameId).gameBoard.resetBoard();
         return true;
     }
 
 
+
     @PostMapping("/click")
-    public List<Move> handlePieceClick(@RequestParam int row, @RequestParam int col, @RequestParam String name) {
+    public List<Move> handlePieceClick(@RequestParam String gameId, @RequestParam int row, @RequestParam int col, @RequestParam String name) {
         // System.out.println("--- NEW CLICK RECEIVED FROM BROWSER ---");
         // System.out.println("Piece: " + name);
         // System.out.println("Coordinates: Row " + row + ", Col " + col); 
-        BoardSquare clickedSquare = gameBoard.getSquare(row, col);
-        selectedSquare = clickedSquare;
+        GameSession game = getGame(gameId);
+        BoardSquare clickedSquare = game.gameBoard.getSquare(row, col);
+        game.selectedSquare = clickedSquare;
 
-        gameBoard.currentPieceLegalMoves = clickedSquare.getPiece().getLegalMoves(clickedSquare, gameBoard);
-        return gameBoard.currentPieceLegalMoves;
+        game.gameBoard.currentPieceLegalMoves = clickedSquare.getPiece().getLegalMoves(clickedSquare, game.gameBoard);
+        return game.gameBoard.currentPieceLegalMoves;
     }
 
     @PostMapping("/moved")
-    public boolean handleCheckPieceMove(@RequestParam int row, @RequestParam int col, @RequestParam String name) {
+    public boolean handleCheckPieceMove(@RequestParam String gameId, @RequestParam int row, @RequestParam int col, @RequestParam String name) {
         // System.out.println("--- PIECE MOVED ---");
         // System.out.println("Piece: " + name);
         // System.out.println("New Coordinates: Row " + row + ", Col " + col); 
-        targetSquare = gameBoard.getSquare(row, col);
+        GameSession game = getGame(gameId);
+        game.targetSquare = game.gameBoard.getSquare(row, col);
 
 
-        if (targetSquare == selectedSquare) {
+        if (game.targetSquare == game.selectedSquare) {
             
             return false; 
         }
-        for(Move LegalSquare : gameBoard.currentPieceLegalMoves){
+        for(Move LegalSquare : game.gameBoard.currentPieceLegalMoves){
             BoardSquare endSquare = LegalSquare.getEndSquare();
-            if(endSquare== targetSquare){
-                gameBoard.movePiece(LegalSquare); 
+            if(endSquare== game.targetSquare){
+                game.gameBoard.movePiece(LegalSquare); 
                 return true;
             }
         }  
         return false;
     }
 
-    public void storeTranspositionTable() {
-        BoardSquare[][] board = gameBoard.getBoard();
+    public void storeTranspositionTable(@RequestParam String gameId) {
+        BoardSquare[][] board = getGame(gameId).gameBoard.getBoard();
         try(FileOutputStream outputStream = new FileOutputStream("src/main/resources/static/transpositionTableRecords.txt", true)) {
             for(int row = 0; row < 8; row++) {
                 for(int col = 0; col < 8; col++) {
@@ -106,9 +127,10 @@ public class GameController {
 
 
     @GetMapping("/castle")
-    public Move IsLastMoveCastlingMove() {
+    public Move IsLastMoveCastlingMove(@RequestParam String gameId) {
         // System.out.println("--- CASTLING MOVE CHECK ---");
 
+        Board gameBoard = getGame(gameId).gameBoard;
         if (gameBoard.moveHistory.isEmpty()) {
             return null;
         }
@@ -124,10 +146,11 @@ public class GameController {
 
 
     @GetMapping("/promotion")
-    public Move IsLastMovePawnPromotion(){
+    public Move IsLastMovePawnPromotion(@RequestParam String gameId){
 
         // System.out.println("--- PAWN PROMOTION MOVE CHECK ---");
 
+        Board gameBoard = getGame(gameId).gameBoard;
         if (gameBoard.moveHistory.isEmpty()) {
             return null;
         }
@@ -143,9 +166,10 @@ public class GameController {
     }
 
     @GetMapping("/EnPassant")
-    public Move IsLastMoveEnPassant(){
+    public Move IsLastMoveEnPassant(@RequestParam String gameId){
         // System.out.println("--- EnPassant MOVE CHECK ---");
 
+        Board gameBoard = getGame(gameId).gameBoard;
         if (gameBoard.moveHistory.isEmpty()) {
             return null;
         }
@@ -160,10 +184,11 @@ public class GameController {
     }
 
 
-    @PostMapping("/promote_for_user")
-    public void handlePawnPromotion(@RequestParam int row, @RequestParam int col, @RequestParam String newPiece) {
+    @PostMapping("/promote-for-user")
+    public void handlePawnPromotion(@RequestParam String gameId, @RequestParam int row, @RequestParam int col, @RequestParam String newPiece) {
         System.out.println("--- PAWN PROMOTED TO " + newPiece + " ---");
-        
+        GameSession game = getGame(gameId);
+        Board gameBoard = game.gameBoard;
         BoardSquare currentPawnSquare = gameBoard.getSquare(row, col);
         Piece currentPawn = currentPawnSquare.getPiece();
         PieceColour Pawncolor = currentPawn.getColour();
@@ -185,8 +210,9 @@ public class GameController {
 
 
     @PostMapping("/undo")
-    public Move handleUndoMove() {
+    public Move handleUndoMove(@RequestParam String gameId) {
         // System.out.println("--- UNDO MOVE ---");
+        Board gameBoard = getGame(gameId).gameBoard;
         if (gameBoard.moveHistory.isEmpty()) {
             return null;
         }
@@ -196,18 +222,18 @@ public class GameController {
     }
 
     @PostMapping("/EngineMove")
-    public Move handleEngineMove() {    
+    public Move handleEngineMove(@RequestParam String gameId) {    
         // System.out.println("--- ENGINE MOVE ---");
-        
+        GameSession game = getGame(gameId);
         // Move randomMove = engine.getRandomMove();
         // if (randomMove != null) {
         //     gameBoard.movePiece(randomMove);
         //     return randomMove;
         // }
         // return null;
-        Move bestMove = engine.getBestMove(4); // You can adjust the depth as needed
+        Move bestMove = game.engine.getBestMove(4); // You can adjust the depth as needed
         if (bestMove != null) {
-            gameBoard.movePiece(bestMove);
+            game.gameBoard.movePiece(bestMove);
             return bestMove;
         }
         return null;
@@ -216,7 +242,7 @@ public class GameController {
     }
 
     @PostMapping("/load-fen")
-    public boolean loadFenString(@RequestParam String fen) {
+    public boolean loadFenString(@RequestParam String gameId, @RequestParam String fen) {
         // System.out.println("--- LOADING NEW FEN ---");
         try {
             Board newBoard = new Board();
@@ -224,9 +250,12 @@ public class GameController {
             FEN fenParser = new FEN();
             fenParser.CreateBoard(newBoard, fen);
             
-            // Overwrite the old board and re-link the engine
-            this.gameBoard = newBoard;
-            this.engine = new Engine(this.gameBoard); 
+            // Replace only the requested session's board and engine.
+            GameSession game = getGame(gameId);
+            game.selectedSquare = null;
+            game.targetSquare = null;
+            game.gameBoard = newBoard;
+            game.engine = new Engine(newBoard); 
             
             return true; 
         } catch (Exception e) {

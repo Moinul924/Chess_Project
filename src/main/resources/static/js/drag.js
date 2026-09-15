@@ -1,10 +1,3 @@
-// Mouse drag-and-drop input handling.
-//
-// These are plain functions rather than a class because they need to read
-// and write state that belongs to the GameController (activePiece,
-// floatingPiece, isGameOver, ...) - each one takes that controller as
-// `game` and operates on it directly, the same way the original methods
-// operated on `this`. GameController just forwards its bound handlers here.
 
 import { clearSelectedHighlight, clearLegalMoveIndicators } from './boardRender.js';
 
@@ -41,6 +34,23 @@ export async function mouseDownHandler(game, e) {
 
 export function mouseMoveHandler(game, e) {
     moveAt(game, e.pageX, e.pageY);
+}
+
+export function cancelActiveDrag(game) {
+    document.removeEventListener('mousemove', game.mouseMoveHandler);
+    document.removeEventListener('mouseup', game.mouseUpHandler);
+    clearLegalMoveIndicators();
+    clearSelectedHighlight();
+
+    if (game.floatingPiece) {
+        game.floatingPiece.remove();
+        game.floatingPiece = null;
+    }
+
+    if (game.activePiece) {
+        game.activePiece.style.opacity = '1';
+        game.activePiece = null;
+    }
 }
 
 export async function mouseUpHandler(game, e) {

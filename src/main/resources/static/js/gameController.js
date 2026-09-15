@@ -1,7 +1,7 @@
 import * as api from './api.js';
 import * as render from './boardRender.js';
 import * as drag from './drag.js';
-import { playSound as playAudio } from './sound.js';
+import { playSound as playAudio } from './sound.js'
 
 export class GameController {
     constructor() {
@@ -15,11 +15,12 @@ export class GameController {
         this.engineButton = document.getElementById('play-engine-button');
         this.fenInput = document.getElementById('fen-input');
         this.loadFenButton = document.getElementById('load-fen-button');
-        this.loadFenButton.addEventListener('click', () => this.handleLoadFen());
-        this.flipButton = document.getElementById('flip-board-button');
+        this.loadFenButton?.addEventListener('click', () => this.handleLoadFen());
         this.playAginButton = document.getElementById('play-again-button');
-
-
+        this.menuButton = document.getElementById('navbar-menu-button');
+        this.navigationMenu = document.getElementById('navbar-links');
+        this.clockPlayer1 = document.getElementById('clock1');
+        this.clockPlayer2 = document.getElementById('clock2');
         // --- Game State ---
         this.activePiece = null;
         this.floatingPiece = null;
@@ -27,16 +28,21 @@ export class GameController {
         this.isPromoting = false;
         this.soundMade = false;
         this.playEngine = false;
-        this.flipBoard = false;
+        this.player1time = 20;
+        this.player2time = 20;
+        this.player2White = Math.random() < 0.5;
+        this.currentWhiteTurn = true 
+        this.clockInterval = null;
+        this.renderClocks();
+        this.startClock();
 
         // --- Bind Event Contexts (delegated to drag.js, which reads/writes this instance) ---
         this.mouseDownHandler = (e) => drag.mouseDownHandler(this, e);
         this.mouseMoveHandler = (e) => drag.mouseMoveHandler(this, e);
         this.mouseUpHandler = (e) => drag.mouseUpHandler(this, e);
-        this.undoButton.addEventListener('click', () => this.handleUndo());
-        this.engineButton.addEventListener('click', () => this.handlePlayEngine());
-        this.flipButton.addEventListener('click', () => this.toggleFlip());
-        this.playAginButton.addEventListener('click', () => this.resetGame());
+        this.undoButton?.addEventListener('click', () => this.handleUndo());
+        this.engineButton?.addEventListener('click', () => this.handlePlayEngine());
+        this.playAginButton?.addEventListener('click', () => this.resetGame());
         this.setGameModeLabel('1 v 1');
     }
 
@@ -50,7 +56,7 @@ export class GameController {
 
     async fetchBoard() {
         const boardData = await api.getBoard();
-
+        this.currentWhiteTurn = boardData.currentWhiteTurn;
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 let currentSquare = boardData.board[row][col];
@@ -61,10 +67,17 @@ export class GameController {
                 }
             }
         }
+        console.log("Player 2 is white:", this.player2White);
+        if (!this.player2White) { this.flipBoard(); }
     }
 
     addPiece(piece, position) {
         render.addPiece(piece, position, this.mouseDownHandler);
+    }
+
+    flipBoard() {
+        
+        this.boardElement.classList.toggle('flipped', !this.player2White);
     }
 
     // ==========================================
@@ -127,6 +140,7 @@ export class GameController {
         // 2. Check Game State (Check, Special Moves, Game Over)
         await this.checkKingInCheck();
         await this.handleSpecialMoves(pieceName, targetSquareElement, position);
+        await this.syncClockTurn();
 
         if (!this.isPromoting) {
             await this.updateGameOverState();
@@ -218,6 +232,8 @@ export class GameController {
 
         if (boardData.CheckMate || boardData.StaleMate) {
             this.isGameOver = true;
+            drag.cancelActiveDrag(this);
+            this.stopClock();
             this.playSound('gameover');
 
             const message = boardData.CheckMate
@@ -255,6 +271,7 @@ export class GameController {
 
             // C. Re-fetch the board state directly from the backend
             await this.fetchBoard();
+            this.renderClocks();
 
             // D. Reset the Game Over state if the game was finished
             this.isGameOver = false;
@@ -299,6 +316,7 @@ export class GameController {
                     this.floatingPiece = null;
                 }
                 this.isGameOver = false;
+                this.resetClocks();
                 if (this.gameOverOverlay) {
                     this.gameOverOverlay.classList.remove('visible');
                 }
@@ -315,36 +333,88 @@ export class GameController {
         }
     }
 
-    toggleFlip() {
-        this.flipBoard = !this.flipBoard;
-
-        if (this.flipBoard) {
-            this.boardElement.classList.add('flipped');
-        } else {
-            this.boardElement.classList.remove('flipped');
-        }
-    }
-
-    resetGame(){
+    async resetGame(){
         // 1. Call the backend API to reset the game
-        const reset = api.resetGame();
+        const reset = await api.resetGame();
         if (reset) {
             // Clear the physical board DOM
             document.querySelectorAll('.piece').forEach(piece => piece.remove());
             render.clearLastMoveHighlights();
             render.clearSelectedHighlight();
-            this.playEngine = false;
-            this.setGameModeLabel('1 v 1');
             this.isGameOver = false;
+            this.resetClocks();
             if (this.gameOverOverlay) {
                 this.gameOverOverlay.classList.remove('visible');
             }
 
-            this.fetchBoard().then(() => this.updateGameOverState());
+            await this.fetchBoard();
+            await this.updateGameOverState();
+            this.startClock();
         }
     }
 
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
+
+    startClock() {
+        if (!this.clockPlayer1 && !this.clockPlayer2) return;
+        this.stopClock();
+        this.renderClocks();
+        this.clockInterval = setInterval(() => this.updateClock(), 1000);
+    }
+
+    stopClock() {
+        if (this.clockInterval) {
+            clearInterval(this.clockInterval);
+            this.clockInterval = null;
+        }
+    }
+
+    updateClock() {
+        if (this.isGameOver || this.isPromoting) return;
+
+        if (this.currentWhiteTurn === this.player2White) {
+            this.player2time = Math.max(0, this.player2time - 1);
+        } else {
+            this.player1time = Math.max(0, this.player1time - 1);
+        }
+
+        this.renderClocks();
+
+        if (this.player1time === 0 || this.player2time === 0) {
+            this.isGameOver = true;
+            drag.cancelActiveDrag(this);
+            this.stopClock();
+            const winner = this.player1time === 0 ? 'Player2' :  this.playEngine === true ? 'Bot' : 'Player1';
+            render.showGameOverMessage(
+                { overlay: this.gameOverOverlay, title: this.gameOverTitle, detail: this.gameOverDetail },
+                `${winner} wins on time.`
+            );
+        }
+    }
+
+    async syncClockTurn() {
+        this.currentWhiteTurn = await api.getCurrentTurn();
+    }
+
+    resetClocks() {
+        this.player1time = 600;
+        this.player2time = 600;
+        this.currentWhiteTurn = true;
+        this.renderClocks();
+    }
+
+    renderClocks() {
+        if (this.clockPlayer1) this.clockPlayer1.textContent = this.formatTime(this.player1time);
+        if (this.clockPlayer2) this.clockPlayer2.textContent = this.formatTime(this.player2time);
+    }
+
+    formatTime(totalSeconds) {
+        const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+        const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+        return `${minutes}:${seconds}`;
+    }
+
+
 }

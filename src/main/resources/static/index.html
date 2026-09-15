@@ -6,47 +6,51 @@
     <link rel="stylesheet" href="./css/board.css">
     <link rel="stylesheet" href="./css/controls.css">
     <link rel="stylesheet" href="./css/overlay.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Matemasie&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chess Game</title>
+
 </head>
 <body>
-    <h1>Chess</h1>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a class="navbar-brand-link" href="./index.html" aria-label="Go to home page">
+                <span class="navbar-title">Chess</span>
+            </a>
+        </div>
+
+        <ul class="navbar-links" id="navbar-links">
+            <li><a href="./play.html" class="navbar-link">Play</a></li>
+            <li><a href="#" class="navbar-link">Stats</a></li>
+            <li><a href="#" class="navbar-link">Settings</a></li>
+        </ul>
+
+        <button class="navbar-menu-button" id="navbar-menu-button" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navbar-links">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <button class="navbar-profile" title="Profile" aria-label="Profile">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5.52 19c.64-2.2 1.84-3 3.22-3h6.52c1.38 0 2.58.8 3.22 3"/>
+                <circle cx="12" cy="10" r="3"/>
+                <circle cx="12" cy="12" r="10"/>
+            </svg>
+        </button>
+    </nav>
+
 
     <!-- New Flexbox Wrapper -->
     <div class="game-layout">
-        
-        <!-- Left Side: Controls & FEN -->
-        <div class="left-panel">
-            <div class="controls-container">
-                <button id="undo-button" class="btn">Undo Move</button>
-                <button id="play-engine-button" class="btn btn-primary">Play Engine</button>
-                <button id="flip-board-button" class="btn">Flip Board</button>
-            </div>
 
-            <div class="fen-container">
-                <input type="text" id="fen-input" placeholder="Paste FEN string here" autocomplete="off">
-                <button id="load-fen-button" class="btn">Load</button>
-            </div>
-        </div>
-
-        <!-- Right Side: The Board -->
-        <div class="right-panel">
-            <div id="game-mode-label" class="game-mode-label" aria-live="polite">1 v 1</div>
-            <div class="grid-board"></div>
-        </div>
 
     </div>
 
-    <!-- Overlays stay outside the main layout -->
-    <div id="game-over-overlay" class="game-over-overlay" aria-live="polite" aria-atomic="true">
-        <div class="game-over-card">
-            <h2 id="game-over-title">Game Over</h2>
-            <p id="game-over-detail"></p>
-            <button id="play-again-button" class="btn btn-primary">Play Again</button>
-        </div>
-    </div>
+   
 
 </body>
-<script type="module" src="./js/board.js"></script>
+<script type="module" src="./js/main.js"></script>
 </html>
