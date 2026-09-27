@@ -1,0 +1,125 @@
+.auth-container {
+    width: min(92vw, 480px);
+    margin: 48px auto;
+    padding: 18px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #4a258f 0%, #2d1d70 55%, #171447 100%);
+    box-shadow: none;
+    overflow: hidden;
+}
+
+.auth-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 18px;
+    padding: 0 12px;
+}
+
+.auth-tab {
+    padding: 8px 4px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.65);
+    cursor: pointer;
+    font: 400 1.05rem "Trebuchet MS", sans-serif;
+    transition: color 0.25s ease, font-size 0.25s ease;
+}
+
+.auth-tab:hover,
+.auth-tab.active {
+    color: #f3ecec;
+}
+
+.auth-tab.active {
+    font-size: 1.45rem;
+}
+
+.auth-viewport {
+    overflow: hidden;
+}
+
+.auth-track {
+    display: flex;
+    width: 200%;
+    transform: translateX(0);
+    transition: transform 0.45s ease;
+}
+
+.auth-track.show-register {
+    transform: translateX(-50%);
+}
+
+.auth-form {
+    display: flex;
+    flex: 0 0 50%;
+    flex-direction: column;
+    gap: 16px;
+    box-sizing: border-box;
+    padding: 28px 22px 22px;
+}
+
+.auth-form h1 {
+    margin: 0 0 4px;
+    color: #ffffff;
+    font: 400 2rem "Trebuchet MS", sans-serif;
+    text-align: center;
+}
+
+.auth-form p {
+    margin: 0 0 8px;
+    color: rgba(255, 255, 255, 0.62);
+    font: 400 1rem "Trebuchet MS", sans-serif;
+    text-align: center;
+}
+
+.auth-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    color: rgba(255, 255, 255, 0.8);
+    font: 400 1rem "Trebuchet MS", sans-serif;
+}
+
+.auth-form input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 13px 14px;
+    border: 1px solid rgba(176, 165, 255, 0.72);
+    border-radius: 8px;
+    outline: none;
+    background: #302277;
+    color: #ffffff;
+    font: 400 1rem "Trebuchet MS", sans-serif;
+}
+
+.auth-form input:focus {
+    border-color: rgba(176, 165, 255, 0.72);
+    box-shadow: none;
+}
+
+.auth-submit {
+    margin-top: 4px;
+    padding: 13px 16px;
+    border: 0;
+    border-radius: 8px;
+    background: #4b43d9;
+    color: #ffffff;
+    cursor: pointer;
+    font: 700 1.05rem "Trebuchet MS", sans-serif;
+}
+
+.auth-submit:hover {
+    background: #5d55ed;
+}
+
+@media (max-width: 520px) {
+    .auth-container {
+        margin-top: 28px;
+    }
+
+    .auth-form {
+        padding-inline: 14px;
+    }
+}

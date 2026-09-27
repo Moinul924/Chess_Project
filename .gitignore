@@ -31,3 +31,17 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local H2 database files (contain user data) ###
+data/
+
+### Logs ###
+*.log
+
+### OS junk ###
+.DS_Store
+Thumbs.db
+
+### Secrets / local-only config (add here once real secrets exist) ###
+.env
+application-local.properties

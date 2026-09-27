@@ -1,6 +1,7 @@
 package com.chess;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -197,5 +198,43 @@ public class Board {
         return boardHash;
     }
 
+
+    public ArrayList<Move> getCapturedMoves(){
+    
+        ArrayList<Move> capturedMoves = new ArrayList<>();
+        for(Move move: moveHistory){
+            if(move.getPieceCaptured() != null){
+                capturedMoves.add(move);
+            }
+        }
+        capturedMoves = sortMovesByPieceValueAndColor(capturedMoves);
+        return capturedMoves;
+    }
+
+    public ArrayList<Move> sortMovesByPieceValueAndColor(ArrayList<Move> moves) {
+        ArrayList<Move> sortedMoves = new ArrayList<>(moves);
+
+        sortedMoves.sort(
+            Comparator.comparingInt((Move move) ->
+                    move.getPiece().getColour() == PieceColour.BLACK ? 0 : 1
+                )
+                .thenComparingInt(move ->
+                    move.getPieceCaptured().getPieceValue()
+                )              
+                .thenComparingInt(move -> {   // Bishop before Knight when both have equal value
+                    String capturedName = move.getPieceCaptured().getName();
+
+                    if (capturedName.equals("Bishop")) {
+                        return 0;
+                    }
+                    if (capturedName.equals("Knight")) {
+                        return 1;
+                    }
+                    return 2;
+                })
+            );
+
+        return sortedMoves;
+    }
     
 }

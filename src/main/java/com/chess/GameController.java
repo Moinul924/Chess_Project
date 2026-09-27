@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 
 
-@RestController // Notice this is RESTController, not just Controller
+@RestController
 @RequestMapping("/api")
 public class GameController {
 
@@ -64,6 +64,11 @@ public class GameController {
     public boolean resetGame(@RequestParam String gameId) {
         getGame(gameId).gameBoard.resetBoard();
         return true;
+    }
+
+    @GetMapping ("/get-captured-pieces")
+    public List<Move> getCapturedPieces(@RequestParam String gameId) {
+        return getGame(gameId).gameBoard.getCapturedMoves();
     }
 
 

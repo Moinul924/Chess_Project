@@ -1,33 +1,6 @@
 import { GameController } from './gameController.js';
 import * as api from './api.js';
 
-const menuButton = document.getElementById('navbar-menu-button');
-const navigationMenu = document.getElementById('navbar-links');
-
-function closeNavigationMenu() {
-    navigationMenu.classList.remove('is-open');
-    menuButton.setAttribute('aria-expanded', 'false');
-    menuButton.setAttribute('aria-label', 'Open navigation menu');
-}
-
-menuButton.addEventListener('click', () => {
-    const isOpen = navigationMenu.classList.toggle('is-open');
-    menuButton.setAttribute('aria-expanded', String(isOpen));
-    menuButton.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
-});
-
-document.addEventListener('click', (event) => {
-    if (!navigationMenu.contains(event.target) && !menuButton.contains(event.target)) {
-        closeNavigationMenu();
-    }
-});
-
-document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-        closeNavigationMenu();
-    }
-});
-
 window.addEventListener('pagehide', () => {
     api.closeGameOnExit();
 });
@@ -41,6 +14,7 @@ async function initializeGame() {
     const game = new GameController();
     game.createGrid();
     await game.fetchBoard();
+    await game.updateCapturedPieces();
     await game.updateGameOverState();
     return game;
 }

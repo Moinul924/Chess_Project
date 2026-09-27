@@ -16,40 +16,14 @@
 
 </head>
 <body>
-    <nav class="navbar">
-        <div class="navbar-brand">
-            <a class="navbar-brand-link" href="./index.html" aria-label="Go to home page">
-                <span class="navbar-title">Chess</span>
-            </a>
-        </div>
-
-        <ul class="navbar-links" id="navbar-links">
-            <li><a href="./play.html" class="navbar-link active">Play</a></li>
-            <li><a href="#" class="navbar-link">Stats</a></li>
-            <li><a href="#" class="navbar-link">Settings</a></li>
-        </ul>
-
-        <button class="navbar-menu-button" id="navbar-menu-button" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navbar-links">
-            <span></span>
-            <span></span>
-            <span></span>
-        </button>
-
-        <button class="navbar-profile" title="Profile" aria-label="Profile">
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5.52 19c.64-2.2 1.84-3 3.22-3h6.52c1.38 0 2.58.8 3.22 3"/>
-                <circle cx="12" cy="10" r="3"/>
-                <circle cx="12" cy="12" r="10"/>
-            </svg>
-        </button>
-    </nav>
+    <div id="navbar"></div>
 
     <div class="game-mode">
         <div>
-            <button id="play-bot-button" class="btn btn-primary">Play against Bot</button>
+            <button type ="button" id="play-bot-button" class="btn btn-primary">Play against Bot</button>
         </div>
         <div>
-            <button id="play-human-button" class="btn btn-primary">Play against Human</button>
+            <button type ="button" id="play-human-button" class="btn btn-primary">Play against Human</button>
         </div>
     </div>
 
@@ -66,8 +40,10 @@
                     <div class="profile-info">
                         <span id="player1-name" class="profile-name">Player 1</span>
                         <span class="profile-rating">1200</span>
+                        <div class="material-status" id="black-material" aria-label="Pieces captured by player 1"></div>
+                        <span class="material-score" id="black-material-score" ></span>
                     </div>
-                </div> 
+                </div>
                 <div class="clock">
                     <span id="clock1" class="clock-time">00:00</span>
                 </div>
@@ -83,6 +59,8 @@
                 <div class="profile-info">
                     <span id="player2-name" class="profile-name">Player 2</span>
                     <span class="profile-rating">1200</span>
+                    <div class="material-status" id="white-material" aria-label="Pieces captured by player 2"></div>
+                    <span class="material-score" id="white-material-score"></span>
                 </div>
                 </div>
                 <div class="clock">
@@ -101,6 +79,7 @@
         </div>
     </div>
 
+    <script type="module" src="./js/navbar.js"></script>
     <script type="module" src="./js/main.js"></script>
 </body>
 </html>

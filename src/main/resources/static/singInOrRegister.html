@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="./css/variables.css">
+    <link rel="stylesheet" href="./css/layout.css">
+    <link rel="stylesheet" href="./css/controls.css">
+    <link rel="stylesheet" href="./css/board.css">
+    <link rel="stylesheet" href="./css/overlay.css">
+    <link rel="stylesheet" href="./css/auth.css">
+    <link rel="stylesheet" href="./css/board.css">
+    <link rel="stylesheet" href="./css/overlay.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Matemasie&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+</head>
+<body>
+    <div id="navbar"></div>
+    <main class="auth-container">
+        <div class="auth-tabs" role="tablist" aria-label="Account access">
+            <button class="auth-tab active" type="button"  data-form="signin" aria-selected="true" aria-controls="signin-form">Sign In</button>
+            <button class="auth-tab" type="button"  data-form="register" aria-selected="false" aria-controls="register-form">Register</button>
+        </div>
+
+        <div class="auth-viewport">
+            <div class="auth-track">
+                <form class="auth-form" id="signin-form" action="/api-account/login" method="post">
+                    <h1>Sign In</h1>
+
+                    <label for="signin-username">Username or email</label>
+                    <input id="signin-username" name="usernameOrEmail" type="text" autocomplete="username" required>
+
+                    <label for="signin-password">Password</label>
+                    <input id="signin-password" name="password" type="password" autocomplete="current-password" required>
+
+                    <button class="auth-submit" type="submit">Sign In</button>
+                </form>
+
+                <form class="auth-form" id="register-form" action="/api-account/register" method="post">
+                    <h1>Register</h1>
+
+                    <label for="register-email">Email</label>
+                    <input id="register-email" name="email" type="email" autocomplete="email" required>
+
+                    <label for="register-username">Username</label>
+                    <input id="register-username" name="username" type="text" autocomplete="username" required>
+
+                    <label for="register-password">Password</label>
+                    <input id="register-password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+
+                    <label for="register-confirm-password">Repeat password</label>
+                    <input id="register-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required>
+
+                    <p class="auth-message" id="register-message" aria-live="polite"></p>
+
+                    <button class="auth-submit" type="submit">Register</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="./js/auth.js"></script>
+    <script type="module" src="./js/navbar.js"></script>
+</body>

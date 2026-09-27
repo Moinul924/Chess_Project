@@ -11,14 +11,26 @@ function gameUrl(endpoint, parameters = {}) {
     return `${BASE_URL}/${endpoint}?${query}`;
 }
 
+let csrf = null;
+const csrfReady = fetch(`${BASE_URL}/csrf`)
+    .then(response => response.json())
+    .then(token => { csrf = token; });
+
+async function post(url) {
+    await csrfReady;
+    return fetch(url, { method: 'POST', headers: { [csrf.headerName]: csrf.token } });
+}
+
 export async function startNewGame(){
-    const response = await fetch(gameUrl('start-new-game'), { method: 'POST' });
+    const response = await post(gameUrl('start-new-game'));
     return response.ok;
 }
 
 export function closeGameOnExit() {
+    if (!csrf) return;
+    // sendBeacon can't set headers, so the token goes in the URL as a parameter instead.
     const emptyBody = new Blob([], { type: 'application/octet-stream' });
-    navigator.sendBeacon(gameUrl('close-game'), emptyBody);
+    navigator.sendBeacon(gameUrl('close-game', { [csrf.parameterName]: csrf.token }), emptyBody);
 }
 
 export async function getBoard() {
@@ -27,22 +39,27 @@ export async function getBoard() {
 }
 
 export async function getLegalMoves(row, col, name) {
-    const response = await fetch(gameUrl('click', { row, col, name }), { method: 'POST' });
+    const response = await post(gameUrl('click', { row, col, name }));
+    return response.json();
+}
+
+export async function getCapturedPieces() {
+    const response = await fetch(gameUrl('get-captured-pieces'));
     return response.json();
 }
 
 export async function sendMove(row, col, name) {
-    const response = await fetch(gameUrl('moved', { row, col, name }), { method: 'POST' });
+    const response = await post(gameUrl('moved', { row, col, name }));
     return response.json();
 }
 
 export async function getEngineMove() {
-    const response = await fetch(gameUrl('EngineMove'), { method: 'POST' });
+    const response = await post(gameUrl('EngineMove'));
     return response.json();
 }
 
 export async function undoMove() {
-    const response = await fetch(gameUrl('undo'), { method: 'POST' });
+    const response = await post(gameUrl('undo'));
     return response.text();
 }
 
@@ -62,11 +79,11 @@ export async function getLastMoveEnPassant() {
 }
 
 export async function promotePawn(row, col, newPiece) {
-    await fetch(gameUrl('promote-for-user', { row, col, newPiece }), { method: 'POST' });
+    await post(gameUrl('promote-for-user', { row, col, newPiece }));
 }
 
 export async function loadFen(fen) {
-    const response = await fetch(gameUrl('load-fen', { fen }), { method: 'POST' });
+    const response = await post(gameUrl('load-fen', { fen }));
     return response.json();
 }
 
@@ -79,3 +96,4 @@ export async function getCurrentTurn() {
     const response = await fetch(gameUrl('current-turn'), { method: 'GET' });
     return response.json();
 }
+

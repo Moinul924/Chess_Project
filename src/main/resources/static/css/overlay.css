@@ -14,6 +14,10 @@
     overflow: hidden;
 }
 
+.promotion-menu.flipped-promotion-menu {
+    transform: rotate(180deg);
+}
+
 .promotion-option {
     width: var(--square-size);
     height: var(--square-size);

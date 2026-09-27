@@ -52,13 +52,15 @@ export function renderLegalMoveIndicators(legalMoves) {
     });
 }
 
-export function showPromotionMenu(pieceName, targetSquareElement, row, onSelect) {
+export function showPromotionMenu(pieceName, targetSquareElement, row, onSelect, isBoardFlipped = false) {
     const colorLetter = pieceName[0];
     const folderColor = colorLetter === 'W' ? 'White' : 'Black';
 
     const menu = document.createElement('div');
     menu.className = 'promotion-menu';
-    menu.style[row === 0 ? 'bottom' : 'top'] = '100%';
+    const opensAboveSquare = row === 0 ? !isBoardFlipped : isBoardFlipped;
+    menu.style[opensAboveSquare ? 'bottom' : 'top'] = '100%';
+    menu.classList.toggle('flipped-promotion-menu', isBoardFlipped);
 
     ['Queen', 'Knight', 'Rook', 'Bishop'].forEach(option => {
         const img = document.createElement('img');

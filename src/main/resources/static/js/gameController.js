@@ -21,6 +21,10 @@ export class GameController {
         this.navigationMenu = document.getElementById('navbar-links');
         this.clockPlayer1 = document.getElementById('clock1');
         this.clockPlayer2 = document.getElementById('clock2');
+        this.blackMaterial = document.getElementById('black-material');
+        this.whiteMaterial = document.getElementById('white-material');
+        this.blackMaterialScore = document.getElementById('black-material-score');
+        this.whiteMaterialScore = document.getElementById('white-material-score');
         // --- Game State ---
         this.activePiece = null;
         this.floatingPiece = null;
@@ -71,12 +75,58 @@ export class GameController {
         if (!this.player2White) { this.flipBoard(); }
     }
 
+    async updateCapturedPieces() {
+        const capturedMoves = await api.getCapturedPieces();
+        this.blackMaterial.innerHTML = '';
+        this.whiteMaterial.innerHTML = '';
+        this.blackMaterialScore.textContent = '';
+        this.whiteMaterialScore.textContent = '';
+
+        const player1Colour = this.player2White ? 'BLACK' : 'WHITE';
+        let player1CapturedValue = 0;
+        let player2CapturedValue = 0;
+
+        capturedMoves.forEach(move => {
+            const capturedPiece = move.pieceCaptured;
+            if (!capturedPiece) return;
+
+            if (move.piece.colour === player1Colour) {
+                player1CapturedValue += capturedPiece.pieceValue;
+            } else {
+                player2CapturedValue += capturedPiece.pieceValue;
+            }
+
+            const image = document.createElement('img');
+            const colourName = capturedPiece.colour === 'BLACK' ? 'Black' : 'White';
+            const pieceName = capturedPiece.name;
+            const pieceId = capturedPiece.colour[0] + pieceName;
+            image.src = `./piece_images/Images-80px/${colourName}/${pieceId}-80px.png`;
+            image.className = 'captured-piece';
+            image.alt = `Captured ${colourName.toLowerCase()} ${pieceName}`;
+
+            const container = move.piece.colour === player1Colour
+                ? this.blackMaterial
+                : this.whiteMaterial;
+            container.appendChild(image);
+        });
+
+        const materialDifference = Math.round(
+            Math.abs(player1CapturedValue - player2CapturedValue) / 100
+        );
+
+        if (materialDifference > 0) {
+            const leadingScore = player1CapturedValue > player2CapturedValue
+                ? this.blackMaterialScore
+                : this.whiteMaterialScore;
+            leadingScore.textContent = `+${materialDifference}`;
+        }
+    }
+
     addPiece(piece, position) {
         render.addPiece(piece, position, this.mouseDownHandler);
     }
 
     flipBoard() {
-        
         this.boardElement.classList.toggle('flipped', !this.player2White);
     }
 
@@ -140,6 +190,7 @@ export class GameController {
         // 2. Check Game State (Check, Special Moves, Game Over)
         await this.checkKingInCheck();
         await this.handleSpecialMoves(pieceName, targetSquareElement, position);
+        await this.updateCapturedPieces();
         await this.syncClockTurn();
 
         if (!this.isPromoting) {
@@ -204,7 +255,11 @@ export class GameController {
     showPromotionMenu(pieceName, targetSquareElement, row, col) {
         this.isPromoting = true;
 
-        render.showPromotionMenu(pieceName, targetSquareElement, row, async (option) => {
+        render.showPromotionMenu(
+            pieceName,
+            targetSquareElement,
+            row,
+            async (option) => {
             this.isPromoting = false;
             this.playSound('promotion');
 
@@ -213,7 +268,9 @@ export class GameController {
             if (this.playEngine && !this.isGameOver) {
                 await this.handleEngineMove();
             }
-        });
+            },
+            this.boardElement.classList.contains('flipped')
+        );
     }
 
     // ==========================================
@@ -271,6 +328,7 @@ export class GameController {
 
             // C. Re-fetch the board state directly from the backend
             await this.fetchBoard();
+            await this.updateCapturedPieces();
             this.renderClocks();
 
             // D. Reset the Game Over state if the game was finished
@@ -323,6 +381,7 @@ export class GameController {
 
                 // 3. Fetch the newly generated board from the backend
                 await this.fetchBoard();
+                await this.updateCapturedPieces();
                 await this.updateGameOverState();
                 this.playSound('move');
             } else {
@@ -348,6 +407,7 @@ export class GameController {
             }
 
             await this.fetchBoard();
+            await this.updateCapturedPieces();
             await this.updateGameOverState();
             this.startClock();
         }
