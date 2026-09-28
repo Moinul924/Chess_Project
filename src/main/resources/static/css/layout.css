@@ -285,15 +285,35 @@ body.auth-page.menu-open::before {
 
 .navbar-profile {
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 50px;
+    flex-shrink: 0;
+    color: var(--color-text);
+}
+
+.navbar-profile-button {
+    display: flex;
     align-items: center;
     justify-content: center;
     width: 50px;
     height: 36px;
-    flex-shrink: 0;
     border: 2px solid transparent;
     background: var(--color-navbar);
-    color: var(--color-text);
+    color: inherit;
     cursor: pointer;
-   
+}
+
+.navbar-username {
+    max-width: 120px;
+    overflow: hidden;
+    color: var(--color-text);
+    font-family: "Ubuntu Mono", monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 

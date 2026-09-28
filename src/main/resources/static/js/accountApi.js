@@ -15,3 +15,29 @@ export async function registerAccount(data) {
         body: JSON.stringify(data)
     });
 }    
+
+export async function loginAccount(data) {
+    await csrfReady;
+    return fetch(BASE_URL + '/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            [csrf.headerName]: csrf.token
+        },
+        body: JSON.stringify(data)
+    });
+}
+
+
+export async function logoutAccount() {
+    await csrfReady;
+    return fetch(BASE_URL + '/logout', {
+        method: 'POST',
+        headers: { [csrf.headerName]: csrf.token }
+    });
+}
+
+export function getCurrentUser() {
+    return fetch(BASE_URL + '/me');
+}
+

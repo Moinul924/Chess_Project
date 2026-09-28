@@ -6,6 +6,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 
 @Configuration
 public class SecurityConfig {
@@ -20,6 +21,12 @@ public class SecurityConfig {
                 .anyRequest().permitAll())
             // The H2 console submits its own forms without a CSRF token, so it needs an exemption.
             .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"))
+                    .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+            .logout(logout -> logout
+            .logoutUrl("/api-account/logout")
+            .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler()))
+
+            
             // The H2 console renders itself inside an <iframe> from the same origin,
             // so same-origin framing needs to be allowed (the default is DENY).
             .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))

@@ -1,5 +1,7 @@
 package com.chess.account;
 
+import java.util.Optional;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,6 +12,7 @@ public class AccountService {
     private final PlayerProfileRepository profiles;
     private final UserSettingsRepository settings;
     private final PasswordEncoder passwordEncoder;
+
 
     public AccountService(AccountRepository accounts,PlayerProfileRepository profiles,
                         UserSettingsRepository settings,PasswordEncoder passwordEncoder){
@@ -49,5 +52,23 @@ public class AccountService {
 
         return saved;
     }
+
+    @Transactional(readOnly = true)
+    public Account login(LoginRequest request){
+        String login = request.usernameOrEmail();
+        Optional<Account> found = login.contains("@") ? accounts.findByEmail(login): accounts.findByUsername(login);
+
+        Account account = found.orElseThrow(
+            () -> new IllegalArgumentException("Invalid username/email or password"));
+
+        if(!passwordEncoder.matches(request.password(), account.getPasswordHash())){
+            throw new IllegalArgumentException("Invalid username/email or password");
+        }
+
+        return account;
+    }
+
+
+
 
 }
