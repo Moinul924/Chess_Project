@@ -3,6 +3,7 @@ import { getCurrentUser } from './accountApi.js';
 const pageRoot = window.location.pathname.includes('/sing-in/') ? '../' : './';
 const isPlayPage = window.location.pathname.endsWith('/play.html');
 const isRegisterPage = window.location.pathname.endsWith('/singInOrRegister.html');
+const isSettingsPage = window.location.pathname.endsWith('/settings.html');
 const navbarContainer = document.getElementById('navbar');
 
 if (isRegisterPage) {
@@ -20,7 +21,7 @@ navbarContainer.innerHTML = `
         <ul class="navbar-links" id="navbar-links">
             <li><a href="${pageRoot}play.html" class="navbar-link${isPlayPage ? ' active' : ''}">Play</a></li>
             <li><a href="#" class="navbar-link">Stats</a></li>
-            <li><a href="#" class="navbar-link">Settings</a></li>
+            <li><a href="${pageRoot}settings.html" class="navbar-link${isSettingsPage ? ' active' : ''}">Settings</a></li>
             <li><a href="${pageRoot}singInOrRegister.html" class="navbar-link${isRegisterPage ? ' active' : ''}">Register</a></li>
         </ul>
 

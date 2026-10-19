@@ -1,22 +1,40 @@
 import { GameController } from './gameController.js';
 import * as api from './api.js';
+import { applySavedTheme } from './themes.js';
+
+// Colour the board with the theme saved on the settings page.
+if (document.querySelector('.grid-board')) {
+    applySavedTheme();
+}
 
 window.addEventListener('pagehide', () => {
     api.closeGameOnExit();
 });
 
-async function initializeGame() {
-    const started = await api.startNewGame();
+// mode: 'ENGINE' (vs bot) or 'LOCAL' (pass and play on one screen)
+async function initializeGame(mode = 'LOCAL') {
+    const game = new GameController();
+    // Against the bot, the player is "player 2" (the bottom of the screen), whose colour was picked at random.
+    const colour = game.player2White ? 'WHITE' : 'BLACK';
+    const started = await api.startNewGame(mode, colour);
     if (!started) {
         throw new Error('Unable to start a new game.');
     }
 
-    const game = new GameController();
+    await drawBoard(game);
+    return game;
+}
+
+async function drawBoard(game) {
     game.createGrid();
     await game.fetchBoard();
     await game.updateCapturedPieces();
     await game.updateGameOverState();
-    return game;
+}
+
+function showBoardScreen() {
+    document.querySelector('.game-mode').classList.add('is-hidden');
+    document.querySelector('.game-board-screen').classList.add('is-visible');
 }
 
 const robotAvatar = `
@@ -42,15 +60,168 @@ function configureProfiles(isBotGame) {
     profiles[1].avatar.innerHTML = playerAvatar;
 }
 
+// ==========================================
+// MATCHMAKING: waiting in the queue for an opponent
+// ==========================================
+
+const matchmakingBox = document.getElementById('matchmaking');
+const matchmakingStatus = document.getElementById('matchmaking-status');
+const cancelSearchButton = document.getElementById('cancel-search-button');
+const onlineStatus = document.getElementById('online-status');
+// The three mode buttons, which are hidden while searching
+const menuOptions = [...document.querySelectorAll('.game-mode > div:not(#matchmaking)')];
+
+let searchTimer = null;
+let isSearching = false;
+let searchingAs = null;       // the account id this tab started searching as
+let accountChanged = false;   // set when another tab signed this browser in as someone else
+
+function showSearching(searching) {
+    isSearching = searching;
+    menuOptions.forEach(option => { option.hidden = searching; });
+    if (matchmakingBox) matchmakingBox.hidden = !searching;
+}
+
+async function startSearching() {
+    showSearching(true);
+    searchingAs = null;
+    matchmakingStatus.textContent = 'Searching for an opponent…';
+    await handleQueueStatus(await api.joinQueue());
+}
+
+// All tabs in one browser share ONE login. If someone signs in as a different account in another
+// tab, this tab is suddenly that account too, so stop rather than carry on searching as someone else.
+function stopBecauseAccountChanged() {
+    stopSearchTimer();
+    accountChanged = true;
+    matchmakingStatus.textContent =
+        'This browser was signed in as a different account in another tab, so this tab stopped searching. ' +
+        'To play two accounts at once, use a separate browser or a private/incognito window.';
+    cancelSearchButton.textContent = 'Reload page';
+}
+
+function stopSearchTimer() {
+    clearInterval(searchTimer);
+    searchTimer = null;
+}
+
+// Reacts to what the server says about our place in the queue.
+async function handleQueueStatus(result) {
+    if (!isSearching) return;   // Cancel was clicked while this request was on its way
+
+    if (!result) {
+        stopSearchTimer();
+        matchmakingStatus.textContent = 'Could not reach the server. Press Cancel and try again.';
+        return;
+    }
+    if (searchingAs === null) {
+        searchingAs = result.accountId;
+    } else if (result.accountId !== searchingAs) {
+        stopBecauseAccountChanged();
+        return;
+    }
+    if (result.status === 'MATCHED') {
+        stopSearchTimer();
+        showSearching(false);
+        await enterOnlineGame(result.gameId);
+        return;
+    }
+    if (result.status === 'NOT_SEARCHING') {
+        // The server dropped us, e.g. the browser slowed this tab's timer down while it was in
+        // the background and we missed our check-ins. Just get back in the queue.
+        await handleQueueStatus(await api.joinQueue());
+        return;
+    }
+    // WAITING: keep checking in. This both asks "paired yet?" and tells the server we're still here.
+    if (!searchTimer) {
+        searchTimer = setInterval(async () => handleQueueStatus(await api.checkQueue()), 1500);
+    }
+}
+
+cancelSearchButton?.addEventListener('click', async () => {
+    if (accountChanged) {
+        // Don't call leaveQueue here: the browser is now the OTHER account, which may be searching in its own tab.
+        window.location.reload();
+        return;
+    }
+    stopSearchTimer();
+    showSearching(false);
+    await api.leaveQueue();
+});
+
+// Closing the page while searching takes us out of the queue straight away,
+// rather than waiting for the server to notice we've stopped checking in.
+window.addEventListener('pagehide', () => {
+    if (isSearching) api.leaveQueueOnExit();
+});
+
+// ==========================================
+// ONLINE GAMES
+// ==========================================
+
+function showOnlineMessage(text) {
+    onlineStatus.textContent = text;
+    onlineStatus.hidden = false;
+}
+
+// Updates the names and the "whose move" line from the server's state.
+function showOnlineState(state) {
+    const iAmWhite = state.myColour === 'WHITE';
+    const myName = iAmWhite ? state.whiteName : state.blackName;
+    const opponentName = iAmWhite ? state.blackName : state.whiteName;
+
+    // Top of the screen is the opponent, bottom is you.
+    document.getElementById('player1-name').textContent = opponentName;
+    document.getElementById('player1-avatar').innerHTML = playerAvatar;
+    document.getElementById('player2-name').textContent = `${myName} (you)`;
+    document.getElementById('player2-avatar').innerHTML = playerAvatar;
+
+    if (state.gameOver) {
+        showOnlineMessage('Game over');
+    } else {
+        showOnlineMessage(state.whiteToMove === iAmWhite ? 'Your move' : `${opponentName} is thinking…`);
+    }
+}
+
+// Called once the server has paired us into a game.
+async function enterOnlineGame(gameId) {
+    api.useOnlineGame(gameId);
+    // Put the id in the address bar, so refreshing the page comes back to this game.
+    history.replaceState(null, '', `?game=${gameId}`);
+    await startOnlineGame();
+}
+
+async function startOnlineGame() {
+    showBoardScreen();
+
+    const state = await api.getOnlineState();
+    if (!state) {
+        showOnlineMessage('That game no longer exists.');
+        return;
+    }
+
+    const game = new GameController();
+    game.enableOnline(state, showOnlineState, () => showOnlineMessage(
+        "You're no longer in this game. Either this browser was signed in as a different account in " +
+        'another tab, or the server restarted.'));
+    await drawBoard(game);
+    showOnlineState(state);
+    game.startPolling();
+}
+
+// ==========================================
+// GAME MENU
+// ==========================================
+
 const botButton = document.getElementById('play-bot-button');
 const humanButton = document.getElementById('play-human-button');
+const onlineButton = document.getElementById('play-online-button');
 if (botButton) {
     botButton.addEventListener('click', async () => {
-        document.querySelector('.game-mode').classList.add('is-hidden');
-        document.querySelector('.game-board-screen').classList.add('is-visible');
+        showBoardScreen();
         configureProfiles(true);
 
-        const game = await initializeGame();
+        const game = await initializeGame('ENGINE');
         game.playEngine = true;
         game.setGameModeLabel('Playing against Bot');
 
@@ -59,14 +230,19 @@ if (botButton) {
         }
     });
     humanButton?.addEventListener('click', async () => {
-        document.querySelector('.game-mode').classList.add('is-hidden');
-        document.querySelector('.game-board-screen').classList.add('is-visible');
+        showBoardScreen();
         configureProfiles(false);
 
-        const game = await initializeGame();
+        const game = await initializeGame('LOCAL');
         game.playEngine = false;
         game.setGameModeLabel('Playing against Human');
     });
+    onlineButton?.addEventListener('click', () => startSearching());
+
+    // Refreshed the page during an online game: go straight back into it.
+    if (api.getOnlineGameIdFromLink()) {
+        startOnlineGame();
+    }
 } else if (document.querySelector('.grid-board')) {
     initializeGame().catch(error => console.error(error));
 }

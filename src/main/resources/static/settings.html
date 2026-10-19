@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings</title>
+    <link rel="stylesheet" href="./css/variables.css">
+    <link rel="stylesheet" href="./css/layout.css">
+    <link rel="stylesheet" href="./css/controls.css">
+    <link rel="stylesheet" href="./css/settings.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Matemasie&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="navbar"></div>
+
+    <main class="settings-page">
+        <h1>Settings</h1>
+
+        <form id="settings-form" class="settings-form">
+            <section class="settings-section" aria-labelledby="theme-heading">
+                <h2 id="theme-heading" class="settings-section-title">Theme</h2>
+                <p class="settings-hint">Choose the colours of your board.</p>
+
+                <fieldset class="theme-options" id="theme-options">
+                    <legend class="visually-hidden">Board colours</legend>
+                    <!-- One option per theme is added here by settings.js -->
+                </fieldset>
+            </section>
+
+            <div class="settings-actions">
+                <button type="submit" id="save-settings-button" class="btn btn-primary">Save</button>
+                <p id="settings-message" class="settings-message" aria-live="polite"></p>
+            </div>
+        </form>
+    </main>
+
+    <script type="module" src="./js/navbar.js"></script>
+    <script type="module" src="./js/settings.js"></script>
+</body>
+</html>

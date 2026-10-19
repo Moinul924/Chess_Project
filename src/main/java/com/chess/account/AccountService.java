@@ -1,6 +1,7 @@
 package com.chess.account;
 
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,12 @@ public class AccountService {
     private final PlayerProfileRepository profiles;
     private final UserSettingsRepository settings;
     private final PasswordEncoder passwordEncoder;
+
+    // The board themes the settings page offers. The server only accepts these, so nobody can save
+    // a made-up value. Keep in sync with the keys in static/js/themes.js (which holds the colours).
+    public static final Set<String> BOARD_THEMES = Set.of(
+        "classic", "black-white", "grey-white", "carbon-antique",
+        "oat-sand", "red-cream", "pink-blue", "forest");
 
 
     public AccountService(AccountRepository accounts,PlayerProfileRepository profiles,
@@ -66,6 +73,41 @@ public class AccountService {
         }
 
         return account;
+    }
+
+    public Account getAccountById(Long accountId) {
+        return accounts.findById(accountId)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+    }
+
+    @Transactional(readOnly = true)
+    public SettingsData getSettings(Long accountId) {
+        String theme = settings.findById(accountId)
+                .map(UserSettings::getBoardTheme)
+                .orElse("classic");   // every account gets a settings row at registration; this is just a safe fallback
+        return new SettingsData(theme);
+    }
+
+    @Transactional
+    public void updateBoardTheme(Long accountId, String boardTheme) {
+        if (!BOARD_THEMES.contains(boardTheme)) {
+            throw new IllegalArgumentException("Unknown board theme");
+        }
+        UserSettings userSettings = settings.findById(accountId).orElseGet(() -> {
+            UserSettings created = new UserSettings();
+            created.setAccountId(accountId);
+            return created;
+        });
+        userSettings.setBoardTheme(boardTheme);
+        settings.save(userSettings);   // UPDATE user_settings SET board_theme = ? WHERE account_id = ?
+    }
+
+    // The name shown on the board for a player, e.g. the opponent in an online game.
+    @Transactional(readOnly = true)
+    public String displayNameOf(Long accountId) {
+        return profiles.findById(accountId)
+                .map(PlayerProfile::getDisplayName)
+                .orElse("Unknown player");
     }
 
 

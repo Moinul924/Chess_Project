@@ -1,0 +1,119 @@
+/* The settings page: sections, and the list of board themes with their 4-square previews. */
+
+.settings-page {
+    width: 100%;
+    max-width: 640px;
+    padding: 24px 16px 64px;
+    box-sizing: border-box;
+    font-family: "Ubuntu Mono", monospace;
+    color: var(--color-text);
+}
+
+.settings-page h1 {
+    margin: 0 0 24px;
+}
+
+.settings-section {
+    padding: 20px;
+    background-color: var(--color-panel-bg-alt);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 8px;
+}
+
+.settings-section-title {
+    margin: 0 0 8px;
+    font-size: 1.6rem;
+}
+
+.settings-hint {
+    margin: 0 0 16px;
+    opacity: 0.85;
+}
+
+/* The themes, one under another */
+.theme-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.theme-option {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 14px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.theme-option:hover {
+    background-color: var(--color-panel-bg-hover);
+}
+
+/* The theme that's currently picked gets the accent border */
+.theme-option:has(input:checked) {
+    border-color: var(--color-accent-border);
+    background-color: var(--color-panel-bg-hover);
+}
+
+.theme-option:has(input:focus-visible) {
+    outline: 2px solid var(--color-navbar-link);
+    outline-offset: 2px;
+}
+
+.theme-option input {
+    accent-color: var(--color-accent-border);
+    width: 18px;
+    height: 18px;
+    margin: 0;
+}
+
+/* 2 x 2 checkerboard: light, dark on top; dark, light on the bottom */
+.theme-preview {
+    display: grid;
+    grid-template-columns: repeat(2, 28px);
+    grid-template-rows: repeat(2, 28px);
+    flex-shrink: 0;
+    border: 2px solid rgba(0, 0, 0, 0.35);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.theme-name {
+    font-size: 1.15rem;
+    font-weight: bold;
+}
+
+.settings-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: 24px;
+}
+
+.settings-actions .btn {
+    padding: 12px 36px;
+    font-size: 1.4rem;
+}
+
+.settings-message {
+    margin: 0;
+    font-weight: bold;
+}
+
+/* Read by screen readers, not shown on screen */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}

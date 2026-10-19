@@ -41,3 +41,20 @@ export function getCurrentUser() {
     return fetch(BASE_URL + '/me');
 }
 
+// { boardTheme: 'red-cream' }
+export function getSettings() {
+    return fetch(BASE_URL + '/settings');
+}
+
+export async function saveSettings(data) {
+    await csrfReady;
+    return fetch(BASE_URL + '/settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            [csrf.headerName]: csrf.token
+        },
+        body: JSON.stringify(data)
+    });
+}
+

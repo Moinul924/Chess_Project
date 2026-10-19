@@ -68,3 +68,31 @@
     border-color: var(--color-accent-border);
     box-shadow: 0 0 8px var(--color-accent-glow);
 }
+
+/* Online play: the "Searching for an opponent" box in the menu, and the "whose move" line above the board */
+.matchmaking {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+}
+
+.matchmaking[hidden],
+.online-status[hidden],
+.game-mode > [hidden] {
+    display: none;
+}
+
+.matchmaking-status {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--color-text);
+}
+
+.online-status {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--color-text);
+}

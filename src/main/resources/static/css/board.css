@@ -22,12 +22,15 @@
     background-color: var(--color-square-dark);
 }
 
-.selected-square {
-    background-color: var(--color-square-selected) !important;
+/* Highlights are see-through tints painted ON TOP of the square's own colour (a background-image
+   sits above the background-color), so light and dark squares stay distinguishable in every theme.
+   Selected comes second so it wins when a square is both. */
+.last-move-highlight {
+    background-image: linear-gradient(var(--color-square-last-move), var(--color-square-last-move));
 }
 
-.last-move-highlight {
-    background-color: var(--color-square-last-move) !important;
+.selected-square {
+    background-image: linear-gradient(var(--color-square-selected), var(--color-square-selected));
 }
 
 .piece {

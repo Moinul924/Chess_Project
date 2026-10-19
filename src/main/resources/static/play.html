@@ -25,10 +25,18 @@
         <div>
             <button type ="button" id="play-human-button" class="btn btn-primary">Play against Human</button>
         </div>
+        <div>
+            <button type ="button" id="play-online-button" class="btn btn-primary">Play Online</button>
+        </div>
+        <div id="matchmaking" class="matchmaking" hidden>
+            <p id="matchmaking-status" class="matchmaking-status" aria-live="polite">Searching for an opponent…</p>
+            <button type="button" id="cancel-search-button" class="btn">Cancel</button>
+        </div>
     </div>
 
     <div class="game-layout game-board-screen">
         <div class="right-panel">
+            <p id="online-status" class="online-status" aria-live="polite" hidden></p>
             <div class="player-content">
                 <div class="profile">
                     <div id="player1-avatar" class="profile-avatar">

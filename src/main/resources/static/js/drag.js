@@ -10,6 +10,7 @@ function moveAt(game, pageX, pageY) {
 
 export async function mouseDownHandler(game, e) {
     if (game.isGameOver || game.isPromoting || game.activePiece || game.floatingPiece) return;
+    if (!game.canPickUp(e.target)) return;   // online: only your own pieces, on your turn
     e.preventDefault();
 
     game.activePiece = e.target;

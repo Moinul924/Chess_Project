@@ -35,8 +35,14 @@ export class GameController {
         this.player1time = 20;
         this.player2time = 20;
         this.player2White = Math.random() < 0.5;
-        this.currentWhiteTurn = true 
+        this.currentWhiteTurn = true
         this.clockInterval = null;
+        // --- Online play ---
+        this.onlineColour = null;      // 'WHITE' or 'BLACK' in an online game, null otherwise
+        this.lastSeenVersion = null;   // the server's game version this page has drawn
+        this.pollTimer = null;
+        this.refreshing = false;
+        this.onOnlineState = null;     // called with each new state, to update names and the status line
         this.renderClocks();
         this.startClock();
 
@@ -73,6 +79,7 @@ export class GameController {
         }
         console.log("Player 2 is white:", this.player2White);
         if (!this.player2White) { this.flipBoard(); }
+        return boardData;
     }
 
     async updateCapturedPieces() {
@@ -170,6 +177,9 @@ export class GameController {
         if (isMoveLegal) {
             this.moveMade = true;
             this.soundMade = false;
+            // Our own move bumped the server's version by one; count it so the next check
+            // doesn't mistake it for an opponent move and redraw the board.
+            if (this.isOnline()) this.lastSeenVersion++;
             await this.makeMove(targetElement, targetSquareElement, startSquareElement, pieceName, position);
         }
     }
@@ -263,7 +273,11 @@ export class GameController {
             this.isPromoting = false;
             this.playSound('promotion');
 
+            this.refreshing = true;   // don't let an online check redraw the board mid-promotion
             await api.promotePawn(row, col, option);
+            if (this.isOnline()) this.lastSeenVersion++;   // the promotion is one more server change
+            await this.syncClockTurn();   // the turn only passes once the promotion is done
+            this.refreshing = false;
             await this.updateGameOverState();
             if (this.playEngine && !this.isGameOver) {
                 await this.handleEngineMove();
@@ -310,8 +324,8 @@ export class GameController {
     }
 
     async handleUndo() {
-        // 1. Prevent undo if a piece is actively being dragged or promoted
-        if (this.activePiece || this.floatingPiece || this.isPromoting) return;
+        // 1. Prevent undo if a piece is actively being dragged or promoted (and never in online games)
+        if (this.activePiece || this.floatingPiece || this.isPromoting || this.isOnline()) return;
 
         // 2. Call the backend API
         const responseText = await api.undoMove();
@@ -393,6 +407,11 @@ export class GameController {
     }
 
     async resetGame(){
+        // An online game can't be restarted from one side, so "Play Again" goes back to the game menu.
+        if (this.isOnline()) {
+            window.location.href = '/play.html';
+            return;
+        }
         // 1. Call the backend API to reset the game
         const reset = await api.resetGame();
         if (reset) {
@@ -474,6 +493,106 @@ export class GameController {
         const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
         const seconds = (totalSeconds % 60).toString().padStart(2, '0');
         return `${minutes}:${seconds}`;
+    }
+
+    // ==========================================
+    // ONLINE PLAY (two accounts)
+    // ==========================================
+
+    isOnline() {
+        return this.onlineColour !== null;
+    }
+
+    isMyTurn() {
+        return (this.currentWhiteTurn ? 'WHITE' : 'BLACK') === this.onlineColour;
+    }
+
+    // May this piece be picked up right now? Online, only your own pieces on your turn.
+    // This just stops pointless drags; the server checks it again and has the final say.
+    canPickUp(pieceElement) {
+        if (!this.isOnline()) return true;
+        const pieceColour = pieceElement.id[0] === 'W' ? 'WHITE' : 'BLACK';
+        return this.opponentJoined && this.isMyTurn() && pieceColour === this.onlineColour;
+    }
+
+    // Call before createGrid()/fetchBoard() so the board is drawn from this player's side.
+    // onLostGame is called if the server stops recognising this page as a player in the game.
+    enableOnline(state, onOnlineState, onLostGame) {
+        this.onLostGame = onLostGame;
+        this.onlineColour = state.myColour;
+        this.player2White = state.myColour === 'WHITE';   // "player 2" is the bottom of the screen: you
+        this.lastSeenVersion = state.version;
+        this.opponentJoined = state.opponentJoined;
+        this.onOnlineState = onOnlineState;
+        // The clocks only run in this browser, so the two players' clocks would disagree.
+        // They stay off until clocks are kept on the server.
+        this.stopClock();
+    }
+
+    // Asks the server every 1.5 seconds whether anything changed. This stands in for WebSockets,
+    // which will push the opponent's move instantly instead of the page having to ask.
+    startPolling() {
+        this.pollTimer = setInterval(() => this.pollOnlineState(), 1500);
+    }
+
+    stopPolling() {
+        clearInterval(this.pollTimer);
+        this.pollTimer = null;
+    }
+
+    async pollOnlineState() {
+        // Don't redraw the board underneath a player who is dragging a piece or picking a promotion.
+        if (this.refreshing || this.activePiece || this.floatingPiece || this.isPromoting) return;
+
+        const state = await api.getOnlineState();
+        if (!state) {
+            // Refused: this browser is now signed in as someone who isn't in this game
+            // (another tab logged in as a different account), or the game is gone (server restart).
+            this.stopPolling();
+            this.isGameOver = true;   // stops pieces being picked up
+            this.onLostGame?.();
+            return;
+        }
+        this.opponentJoined = state.opponentJoined;
+
+        if (state.version !== this.lastSeenVersion) {
+            const turnChanged = state.whiteToMove !== this.currentWhiteTurn;
+            this.lastSeenVersion = state.version;
+            await this.redrawFromServer(turnChanged);
+        }
+        this.onOnlineState?.(state, this);
+        if (state.gameOver) this.stopPolling();
+    }
+
+    // Redraws the whole board from the server's copy, e.g. after the opponent moved.
+    async redrawFromServer(playMoveSound) {
+        this.refreshing = true;
+        try {
+            document.querySelectorAll('.piece').forEach(piece => piece.remove());
+            render.clearLegalMoveIndicators();
+            render.clearSelectedHighlight();
+
+            const boardData = await this.fetchBoard();
+            this.highlightLastMove(boardData);
+            await this.updateCapturedPieces();
+
+            this.soundMade = false;
+            await this.checkKingInCheck();
+            await this.updateGameOverState();
+            if (playMoveSound && !this.soundMade) this.playSound('move');
+        } finally {
+            this.refreshing = false;
+        }
+    }
+
+    highlightLastMove(boardData) {
+        render.clearLastMoveHighlights();
+        const lastMove = boardData.moveHistory?.at(-1);
+        if (!lastMove?.startSquare || !lastMove?.endSquare) return;
+        const start = document.getElementById(render.convertIndicesToPosition(lastMove.startSquare.row, lastMove.startSquare.col));
+        const end = document.getElementById(render.convertIndicesToPosition(lastMove.endSquare.row, lastMove.endSquare.col));
+        start?.classList.add('last-move-highlight');
+        end?.classList.add('last-move-highlight');
     }
 
 
